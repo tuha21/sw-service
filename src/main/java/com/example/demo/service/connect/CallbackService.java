@@ -68,11 +68,7 @@ public class CallbackService {
                             connection.setAccessTokenExpiredAt(accessTokenResponse.getAccessTokenExpireIn());
                             connection.setRefreshTokenExpiredAt(accessTokenResponse.getRefreshTokenExpireIn());
                             connectionRepository.save(connection);
-                            if (isNew) {
-                                response.sendRedirect("http://localhost:3000/home/setting/connected?shop=" + vnShop.getShopId());
-                            } else {
-                                response.sendRedirect("http://localhost:3000/home/setting/reconnected?shop=" + vnShop.getShopId());
-                            }
+                            response.sendRedirect("https://tuha21.github.io/sw-frontend/");
                         }
                     }
                 }
