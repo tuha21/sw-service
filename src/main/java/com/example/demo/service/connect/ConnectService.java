@@ -3,6 +3,7 @@ package com.example.demo.service.connect;
 import com.example.demo.common.consts.TikTokAppConst;
 import com.example.demo.controller.response.BaseResponse;
 import com.example.demo.controller.response.connect.ConnectData;
+import com.example.demo.repository.ConnectionRepository;
 import com.example.demo.repository.TenantRepository;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 public class ConnectService {
 
     private final TenantRepository tenantRepository;
+    private final ConnectionRepository connectionRepository;
 
     public BaseResponse getConnectLink(int tenantId) {
         var response = new BaseResponse();
@@ -30,6 +32,13 @@ public class ConnectService {
                     TikTokAppConst.APP_KEY, uuid));
         }
         response.setData(connectData);
+        return response;
+    }
+
+    public BaseResponse getConnections (int tenantId) {
+        var response = new BaseResponse();
+        var connections = connectionRepository.findAllByTenantId(tenantId);
+        response.setData(connections);
         return response;
     }
 

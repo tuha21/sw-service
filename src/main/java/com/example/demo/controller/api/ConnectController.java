@@ -24,4 +24,11 @@ public class ConnectController {
         return new ResponseEntity<>(connectService.getConnectLink(tenantId), HttpStatus.OK);
     }
 
+    @GetMapping("/all")
+    public ResponseEntity<BaseResponse> getConnections (
+        @RequestParam("tenantId") int tenantId
+    ) {
+        return new ResponseEntity<>(connectService.getConnections(tenantId), HttpStatus.OK);
+    }
+
 }
