@@ -3,3 +3,11 @@ spring:
     url: jdbc:mysql://root:lHNqBwd3UhNGgO3LzlXx@containers-us-west-146.railway.app:7438/railway
     username: root
     password: lHNqBwd3UhNGgO3LzlXx
+
+feign:
+  client:
+    config:
+      default:
+        connectTimeout: 30000
+        readTimeout: 30000
+        decode404: true
