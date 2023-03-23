@@ -7,10 +7,15 @@ import lombok.Data;
 
 @Data
 @Entity
-@Table(name = "tenants")
-public class Tenant extends BaseEntity {
+@Table(name = "accounts")
+public class Account extends BaseEntity {
 
-    private String alias;
-    private String uuid;
+    private int tenantId;
+
+    private String username;
+
+    private String password;
+
+    private String fullName;
 
 }
