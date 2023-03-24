@@ -66,7 +66,7 @@ public class TikTokProductService {
                 page++;
                 if (response != null
                     && response.getData() != null
-                    && !response.getData().getProducts().isEmpty()) {
+                    && response.getData().getProducts() != null) {
                     List<TikTokProductModel> tiktokProductBaseInfos = response.getData().getProducts();
                     tiktokProductBaseInfos.forEach(item -> {
                         CompletableFuture.runAsync(() -> crawlProductDetail(connection, item.getId()));
@@ -74,9 +74,10 @@ public class TikTokProductService {
                 }
             } while (response != null
                 && response.getData() != null
-                && !response.getData().getProducts().isEmpty()
+                && response.getData().getProducts() != null
             );
         } catch (Exception e) {
+            e.printStackTrace();
             log.error("[Tiktok Product] [crawlProductFuture] Error crawl product: {}", e.getMessage());
         }
     }
@@ -103,6 +104,7 @@ public class TikTokProductService {
                 log.error("crawlProductDetail | {}", e.toString());
             }
             if (!product.getSkus().isEmpty()) {
+                ChannelProduct finalChannelProduct = channelProduct;
                 product.getSkus().forEach(sku -> {
                     var variant = channelVariantRepository.findByItemIdAndAndVariantId(itemId, sku.getId());
                     if (variant == null) {
@@ -114,19 +116,23 @@ public class TikTokProductService {
                     variant.setSku(sku.getSellerSku());
                     variant.setVariantId(sku.getId());
                     variant.setName(product.getProductName());
+                    variant.setImage(finalChannelProduct.getImage());
                     if (!sku.getSalesAttributes().isEmpty()) {
                         List<String> images = new ArrayList<>();
-                        StringBuilder productName = new StringBuilder(product.getProductName());
+                        StringBuilder variantName = new StringBuilder();
                         for (TiktokSalesAttributes tiktokSalesAttributes : sku.getSalesAttributes()) {
                             if (tiktokSalesAttributes.getSkuImg() != null && !tiktokSalesAttributes.getSkuImg().getUrlList().isEmpty()) {
                                 images.add(tiktokSalesAttributes.getSkuImg().getUrlList().get(0));
                             }
-                            productName.append(" - ").append(tiktokSalesAttributes.getValueName());
+                            if (sku.getSalesAttributes().indexOf(tiktokSalesAttributes) != 0) {
+                                variantName.append(" - ");
+                            }
+                            variantName.append(tiktokSalesAttributes.getValueName());
                         }
                         if (!images.isEmpty()) {
                             variant.setImage(images.get(0));
                         }
-                        variant.setName(productName.toString());
+                        variant.setName(variantName.toString());
                     }
                     channelVariantRepository.save(variant);
                 });
