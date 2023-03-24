@@ -14,14 +14,14 @@ public class AppApiController {
 
     @GetMapping("/app-info")
     public ResponseEntity<BaseResponse> getAppInfo () {
-        BaseResponse res = new BaseResponse();
+        BaseResponse baseResponse = new BaseResponse();
         var appInfo = AppInfoData.builder()
             .appName("SW Service")
             .author("Kakarot")
             .version("2023.03.v1")
             .build();
-        res.setData(appInfo);
-        return new ResponseEntity<>(res, HttpStatus.OK);
+        baseResponse.setData(appInfo);
+        return new ResponseEntity<>(baseResponse, HttpStatus.OK);
     }
 
 }
