@@ -15,5 +15,5 @@ public class ChannelProduct extends BaseEntity {
     private String itemId;
     private String name;
     private String image;
-
+    private Boolean mappingStatus;
 }

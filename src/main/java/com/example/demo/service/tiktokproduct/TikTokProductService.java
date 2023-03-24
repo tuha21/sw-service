@@ -13,12 +13,16 @@ import com.example.demo.repository.ChannelProductRepository;
 import com.example.demo.repository.ChannelVariantRepository;
 import com.example.demo.repository.ConnectionRepository;
 import com.example.demo.service.tiktok.TikTokApiService;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -31,7 +35,7 @@ public class TikTokProductService {
     private final ChannelProductRepository channelProductRepository;
     private final ChannelVariantRepository channelVariantRepository;
 
-    public BaseResponse crawlProduct (int connectionId) {
+    public BaseResponse crawlProduct(int connectionId) {
         BaseResponse baseResponse = new BaseResponse();
         String error = null;
         try {
@@ -49,7 +53,7 @@ public class TikTokProductService {
         return baseResponse;
     }
 
-    public void crawlProductFuture (Connection connection) {
+    public void crawlProductFuture(Connection connection) {
         try {
             TiktokProductsResponse response;
             int page = 1;
@@ -58,23 +62,23 @@ public class TikTokProductService {
             long toDate = Utils.getUTCTimestamp();
             do {
                 response = tikTokApiService.getProductsTikTok(
-                    connection.getAccessToken(),
-                    connection.getShopId(),
-                    Integer.parseInt(String.valueOf(fromDate)),
-                    Integer.parseInt(String.valueOf(toDate)),
-                    page, size);
+                        connection.getAccessToken(),
+                        connection.getShopId(),
+                        Integer.parseInt(String.valueOf(fromDate)),
+                        Integer.parseInt(String.valueOf(toDate)),
+                        page, size);
                 page++;
                 if (response != null
-                    && response.getData() != null
-                    && response.getData().getProducts() != null) {
+                        && response.getData() != null
+                        && response.getData().getProducts() != null) {
                     List<TikTokProductModel> tiktokProductBaseInfos = response.getData().getProducts();
                     tiktokProductBaseInfos.forEach(item -> {
                         CompletableFuture.runAsync(() -> crawlProductDetail(connection, item.getId()));
                     });
                 }
             } while (response != null
-                && response.getData() != null
-                && response.getData().getProducts() != null
+                    && response.getData() != null
+                    && response.getData().getProducts() != null
             );
         } catch (Exception e) {
             e.printStackTrace();
@@ -82,11 +86,11 @@ public class TikTokProductService {
         }
     }
 
-    public void crawlProductDetail (Connection connection, String itemId) {
+    public void crawlProductDetail(Connection connection, String itemId) {
         var productDetail = tikTokApiService.getProductDetailTikTok(
-            connection.getAccessToken(),
-            connection.getShopId(),
-            itemId
+                connection.getAccessToken(),
+                connection.getShopId(),
+                itemId
         );
         if (productDetail != null && productDetail.getData() != null) {
             var product = productDetail.getData();
@@ -141,17 +145,26 @@ public class TikTokProductService {
         }
     }
 
-    public BaseResponse filter (List<Integer> connectionIds) {
+    public BaseResponse filter(List<Integer> connectionIds, int page, int mappingStatus, String query) {
         BaseResponse baseResponse = new BaseResponse();
         try {
             List<ChannelProductResponse> channelProductResponses = new ArrayList<>();
-            var products = channelProductRepository.findAllByConnectionIdIn(connectionIds);
+            List<ChannelProduct> products;
+            Pageable pageable = PageRequest.of(page, 10);
+
+            if (mappingStatus == 1) {
+                products = channelProductRepository.findAllByConnectionIdInAndNameContains(connectionIds, query, pageable);
+            } else if(mappingStatus == 2) {
+                products = channelProductRepository.findAllByConnectionIdInAndNameContainsAndMappingStatus(connectionIds, query, true, pageable);
+            } else {
+                products = channelProductRepository.findAllByConnectionIdInAndNameContainsAndMappingStatus(connectionIds, query, false, pageable);
+            }
             if (products != null) {
                 CompletableFuture.allOf(
-                    products
-                        .stream()
-                        .map(product -> CompletableFuture.runAsync(() -> getVariant(product, channelProductResponses)))
-                        .toArray(CompletableFuture[]::new)
+                        products
+                                .stream()
+                                .map(product -> CompletableFuture.runAsync(() -> getVariant(product, channelProductResponses)))
+                                .toArray(CompletableFuture[]::new)
                 ).get();
             }
             baseResponse.setData(channelProductResponses);
@@ -163,13 +176,13 @@ public class TikTokProductService {
         return baseResponse;
     }
 
-    public void getVariant (ChannelProduct channelProduct, List<ChannelProductResponse> channelProductResponses) {
+    public void getVariant(ChannelProduct channelProduct, List<ChannelProductResponse> channelProductResponses) {
         ChannelProductResponse channelProductResponse = new ChannelProductResponse();
         channelProductResponse.setProduct(channelProduct);
         var variants = channelVariantRepository.findAllByItemId(channelProduct.getItemId());
         channelProductResponse.setVariants(variants);
         var mappingList = variants.stream().filter(variant -> variant.getMappingId() != 0).collect(
-            Collectors.toList());
+                Collectors.toList());
         channelProductResponse.setTotalMapping(mappingList.size());
         channelProductResponses.add(channelProductResponse);
     }

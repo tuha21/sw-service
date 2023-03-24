@@ -27,9 +27,12 @@ public class ChannelProductController {
 
     @GetMapping("/filter")
     public ResponseEntity<BaseResponse> filterProduct (
-        @RequestParam("connectionIds") List<Integer> connectionIds
+        @RequestParam("connectionIds") List<Integer> connectionIds,
+        @RequestParam("page") int page,
+        @RequestParam("mappingStatus") int mappingStatus,
+        @RequestParam("query") String query
     ) {
-        return new ResponseEntity<>(tikTokProductService.filter(connectionIds), HttpStatus.OK);
+        return new ResponseEntity<>(tikTokProductService.filter(connectionIds, page, mappingStatus, query), HttpStatus.OK);
     }
 
 }
