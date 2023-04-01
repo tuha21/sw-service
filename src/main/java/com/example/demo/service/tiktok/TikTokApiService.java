@@ -2,21 +2,25 @@ package com.example.demo.service.tiktok;
 
 import com.example.demo.common.consts.TikTokAppConst;
 import com.example.demo.common.tiktok.feign.TikTokAuthFeign;
+import com.example.demo.common.tiktok.feign.TiktokOrderFeign;
 import com.example.demo.common.tiktok.feign.TiktokProductFeign;
 import com.example.demo.common.tiktok.feign.TiktokShopFeign;
 import com.example.demo.common.tiktok.request.TiktokAccessTokenRequest;
 import com.example.demo.common.tiktok.request.TiktokBaseRequest;
+import com.example.demo.common.tiktok.request.order.TiktokFilterOrderRequest;
+import com.example.demo.common.tiktok.request.order.TiktokOrderDetailsRequest;
 import com.example.demo.common.tiktok.request.product.TiktokProductsRequest;
 import com.example.demo.common.tiktok.response.TiktokAccessTokenResponse;
 import com.example.demo.common.tiktok.response.TiktokAuthorizedShopResponse;
+import com.example.demo.common.tiktok.response.order.TiktokOrderDetailsResponse;
+import com.example.demo.common.tiktok.response.order.TiktokOrdersResponse;
 import com.example.demo.common.tiktok.response.product.TiktokProductDetailResponse;
 import com.example.demo.common.tiktok.response.product.TiktokProductsResponse;
-import java.util.concurrent.Future;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.ResponseEntity;
-import org.springframework.scheduling.annotation.AsyncResult;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -26,6 +30,8 @@ public class TikTokApiService {
     private final TikTokAuthFeign tikTokAuthFeign;
     private final TiktokShopFeign tiktokShopFeign;
     private final TiktokProductFeign tiktokProductFeign;
+
+    private final TiktokOrderFeign tiktokOrderFeign;
 
     public TiktokAccessTokenResponse getAccessTokenTikTok(String code) {
         try {
@@ -37,7 +43,6 @@ public class TikTokApiService {
             return tikTokAuthFeign.getAccessToken(accessTokenRequest).getBody();
         } catch (Exception e) {
             e.printStackTrace();
-            log.error("[TikTok] Error Get Access Token: {}", e.getMessage());
         }
         return null;
     }
@@ -46,7 +51,7 @@ public class TikTokApiService {
         try {
             return tiktokShopFeign.getAuthorizedShop(TikTokAppConst.APP_KEY, accessToken).getBody();
         } catch (Exception e) {
-            log.error("[TikTok] Error Get Authorized Shop: {}", e.getMessage());
+            e.printStackTrace();
         }
         return null;
     }
@@ -65,7 +70,7 @@ public class TikTokApiService {
                 requestBody
             ).getBody();
         } catch (Exception e) {
-            log.error("[TikTok] Error Get Products: {}", e.getMessage());
+            e.printStackTrace();
         }
         return null;
     }
@@ -77,7 +82,25 @@ public class TikTokApiService {
             requestParams.setShopId(shopId);
             return tiktokProductFeign.getProductDetail(TikTokAppConst.APP_KEY, accessToken, shopId, itemId).getBody();
         } catch (Exception e) {
-            log.error("[TikTok] Error Get ProductDetail: {}", e.getMessage());
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public TiktokOrdersResponse getOrdersTiktok (String token, String shopId, TiktokFilterOrderRequest request) {
+        try {
+            return tiktokOrderFeign.filterOrder(TikTokAppConst.APP_KEY, token, shopId, request).getBody();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public TiktokOrderDetailsResponse getOrderDetailsTiktok (String token, String shopId, TiktokOrderDetailsRequest request) {
+        try {
+            return tiktokOrderFeign.getDetails(TikTokAppConst.APP_KEY, token, shopId, request).getBody();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
         return null;
     }
