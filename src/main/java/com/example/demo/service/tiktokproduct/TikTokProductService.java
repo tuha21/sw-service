@@ -92,11 +92,13 @@ public class TikTokProductService {
             var channelProduct = channelProductRepository.findByItemId(itemId);
             if (channelProduct == null) {
                 channelProduct = new ChannelProduct();
+                channelProduct.setMappingStatus(false);
             }
             channelProduct.setConnectionId(connection.getId());
             channelProduct.setTenantId(connection.getTenantId());
             channelProduct.setItemId(itemId);
             channelProduct.setName(product.getProductName());
+            channelProductRepository.save(channelProduct);
             try {
                 channelProduct.setImage(product.getImages().get(0).getUrlList().get(0));
             } catch (Exception e) {
@@ -136,7 +138,6 @@ public class TikTokProductService {
                     channelVariantRepository.save(variant);
                 });
             }
-            channelProductRepository.save(channelProduct);
         }
     }
 
