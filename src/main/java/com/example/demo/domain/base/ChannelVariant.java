@@ -2,6 +2,9 @@ package com.example.demo.domain.base;
 
 import javax.persistence.Entity;
 import javax.persistence.Table;
+import javax.persistence.Transient;
+
+import com.example.demo.domain.Variant;
 import lombok.Data;
 
 @Data
@@ -18,4 +21,6 @@ public class ChannelVariant extends BaseEntity {
     private int mappingId;
     private String variantId;
 
+    @Transient
+    private Variant variant;
 }

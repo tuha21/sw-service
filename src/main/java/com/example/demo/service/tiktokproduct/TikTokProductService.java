@@ -9,9 +9,7 @@ import com.example.demo.controller.response.ChannelProductResponse;
 import com.example.demo.domain.ChannelProduct;
 import com.example.demo.domain.Connection;
 import com.example.demo.domain.base.ChannelVariant;
-import com.example.demo.repository.ChannelProductRepository;
-import com.example.demo.repository.ChannelVariantRepository;
-import com.example.demo.repository.ConnectionRepository;
+import com.example.demo.repository.*;
 import com.example.demo.service.tiktok.TikTokApiService;
 
 import java.util.ArrayList;
@@ -23,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -34,6 +33,8 @@ public class TikTokProductService {
     private final ConnectionRepository connectionRepository;
     private final ChannelProductRepository channelProductRepository;
     private final ChannelVariantRepository channelVariantRepository;
+    private final VariantRepository variantRepository;
+    private final ProductRepository productRepository;
 
     public BaseResponse crawlProduct(List<Integer> connectionIds, Integer fromDate, Integer toDate) {
         BaseResponse baseResponse = new BaseResponse();
@@ -175,11 +176,51 @@ public class TikTokProductService {
         ChannelProductResponse channelProductResponse = new ChannelProductResponse();
         channelProductResponse.setProduct(channelProduct);
         var variants = channelVariantRepository.findAllByItemId(channelProduct.getItemId());
+        variants.forEach(variant -> {
+            if (variant.getMappingId() != 0) {
+                var coreVar = variantRepository.findById(variant.getMappingId());
+                coreVar.ifPresent(variant::setVariant);
+            }
+        });
         channelProductResponse.setVariants(variants);
         var mappingList = variants.stream().filter(variant -> variant.getMappingId() != 0).collect(
                 Collectors.toList());
         channelProductResponse.setTotalMapping(mappingList.size());
         channelProductResponses.add(channelProductResponse);
+    }
+
+    public BaseResponse quickMapProduct (int tiktokVariantId) {
+        var response = new BaseResponse();
+        var tiktokVariantOptional = channelVariantRepository.findById(tiktokVariantId);
+        if (tiktokVariantOptional.isPresent()) {
+            var variant = variantRepository.findBySku(tiktokVariantOptional.get().getSku());
+            if (variant != null) {
+                ChannelVariant tiktokVariant = tiktokVariantOptional.get();
+                tiktokVariant.setMappingId(variant.getId());
+                channelVariantRepository.save(tiktokVariant);
+                processProductMapping(tiktokVariant.getItemId());
+            } else {
+                response.setError("Không tìm thấy sản phẩm có SKU tương ứng");
+            }
+        }
+        return response;
+    }
+
+    @Async
+    public void processProductMapping (String itemId) {
+        try {
+            var channelProduct = channelProductRepository.findByItemId(itemId);
+            if (channelProduct != null) {
+                var channelVariants = channelVariantRepository.findAllByItemId(channelProduct.getItemId());
+                if (channelVariants != null) {
+                    var isMapping = channelVariants.stream().allMatch(item -> item.getMappingId() != 0);
+                    channelProduct.setMappingStatus(isMapping);
+                    channelProductRepository.save(channelProduct);
+                }
+            }
+        } catch (Exception e) {
+            log.error("processProductMapping | {}", e.toString());
+        }
     }
 
 }
