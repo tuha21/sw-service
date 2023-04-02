@@ -20,9 +20,11 @@ public class ChannelProductController {
 
     @GetMapping("/crawl")
     public ResponseEntity<BaseResponse> crawlProduct (
-        @RequestParam("connectionId") int connectionId
+        @RequestParam("connectionIds") List<Integer> connectionIds,
+        @RequestParam("fromDate") Integer fromDate,
+        @RequestParam("toDate") Integer toDate
     ) {
-        return new ResponseEntity<>(tikTokProductService.crawlProduct(connectionId), HttpStatus.OK);
+        return new ResponseEntity<>(tikTokProductService.crawlProduct(connectionIds, fromDate, toDate), HttpStatus.OK);
     }
 
     @GetMapping("/filter")

@@ -35,37 +35,32 @@ public class TikTokProductService {
     private final ChannelProductRepository channelProductRepository;
     private final ChannelVariantRepository channelVariantRepository;
 
-    public BaseResponse crawlProduct(int connectionId) {
+    public BaseResponse crawlProduct(List<Integer> connectionIds, Integer fromDate, Integer toDate) {
         BaseResponse baseResponse = new BaseResponse();
         String error = null;
         try {
-            var connection = connectionRepository.findById(connectionId);
-            if (connection.isPresent()) {
-                CompletableFuture.runAsync(() -> crawlProductFuture(connection.get()));
-            } else {
-                error = "Không tìm thấy thông tin gian hàng";
-            }
+            connectionIds.forEach(connectionId -> {
+                var connection = connectionRepository.findById(connectionId);
+                connection.ifPresent(value -> CompletableFuture.runAsync(() -> crawlProductFuture(value, fromDate, toDate)));
+            });
         } catch (Exception e) {
             error = e.getMessage();
-            log.error("[Tiktok Product] [crawlProduct] Error crawl product: {}", e.getMessage());
-        }
+        };
         baseResponse.setError(error);
         return baseResponse;
     }
 
-    public void crawlProductFuture(Connection connection) {
+    public void crawlProductFuture(Connection connection, Integer fromDate, Integer toDate) {
         try {
             TiktokProductsResponse response;
             int page = 1;
             int size = 20;
-            long fromDate = 0;
-            long toDate = Utils.getUTCTimestamp();
             do {
                 response = tikTokApiService.getProductsTikTok(
                         connection.getAccessToken(),
                         connection.getShopId(),
-                        Integer.parseInt(String.valueOf(fromDate)),
-                        Integer.parseInt(String.valueOf(toDate)),
+                        fromDate,
+                        toDate,
                         page, size);
                 page++;
                 if (response != null
@@ -169,7 +164,6 @@ public class TikTokProductService {
             }
             baseResponse.setData(channelProductResponses);
         } catch (Exception e) {
-            log.error("filter | {}", e.toString());
             e.printStackTrace();
             baseResponse.setError(e.toString());
         }

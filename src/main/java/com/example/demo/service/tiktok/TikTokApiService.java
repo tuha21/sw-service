@@ -97,7 +97,7 @@ public class TikTokApiService {
                 return response;
             }
         } catch (Exception e) {
-//            e.printStackTrace();
+            e.printStackTrace();
         }
         return null;
     }
@@ -112,7 +112,7 @@ public class TikTokApiService {
                 return response;
             }
         } catch (Exception e) {
-//            e.printStackTrace();
+            e.printStackTrace();
         }
         return null;
     }
