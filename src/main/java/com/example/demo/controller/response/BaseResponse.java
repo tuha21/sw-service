@@ -2,7 +2,6 @@ package com.example.demo.controller.response;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.io.Serializable;
-import lombok.Builder;
 import lombok.Data;
 
 @Data
@@ -12,5 +11,6 @@ public class BaseResponse implements Serializable {
 
     private String error;
     private Object data;
+    private int total;
 
 }

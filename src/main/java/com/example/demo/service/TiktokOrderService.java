@@ -6,7 +6,9 @@ import com.example.demo.common.tiktok.request.order.TiktokOrderDetailsRequest;
 import com.example.demo.common.tiktok.response.order.TiktokOrderDetailsResponse;
 import com.example.demo.common.tiktok.response.order.TiktokOrdersResponse;
 import com.example.demo.common.util.Utils;
+import com.example.demo.controller.request.TikTokFilterOrderRequest;
 import com.example.demo.controller.response.BaseResponse;
+import com.example.demo.controller.response.tiktokorder.TikTokOrderData;
 import com.example.demo.domain.ChannelOrder;
 import com.example.demo.domain.ChannelOrderItem;
 import com.example.demo.domain.Connection;
@@ -18,10 +20,13 @@ import com.example.demo.repository.ConnectionRepository;
 import com.example.demo.service.tiktok.TikTokApiService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -33,75 +38,149 @@ public class TiktokOrderService {
     private final ChannelOrderRepository channelOrderRepository;
     private final ChannelOrderItemRepository channelOrderItemRepository;
     private final ChannelVariantRepository channelVariantRepository;
+
     public BaseResponse getTikTokOrders(int connectionId, Integer fromDate, Integer toDate) {
         BaseResponse baseResponse = new BaseResponse();
         try {
-            TiktokFilterOrderRequest request = new TiktokFilterOrderRequest();
-//            request.setUpdateTimeFrom(fromDate.longValue());
-//            request.setUpdateTimeTo(toDate.longValue());
-            request.setPageSize(1);
-            Connection connection = connectionRepository.findById(connectionId).get();
-            TiktokOrdersResponse tiktokOrdersResponse = tikTokApiService.getOrdersTiktok(
-                    connection.getAccessToken(),
-                    connection.getShopId(),
-                    request
-            );
+            var connectionOptional = connectionRepository.findById(connectionId);
+            if (connectionOptional.isPresent()) {
+                Connection connection = connectionOptional.get();
+                List<TiktokOrderModel> tiktokOrderModels;
+                String cursor = null;
+                do {
+                    tiktokOrderModels = new ArrayList<>();
+                    TiktokFilterOrderRequest request = new TiktokFilterOrderRequest();
+//                    request.setUpdateTimeFrom(fromDate.longValue());
+//                    request.setUpdateTimeTo(toDate.longValue());
+                    request.setPageSize(20);
+                    request.setCursor(cursor);
 
-            List<String> orderSns = new ArrayList<>();
-            tiktokOrdersResponse.getData().getOrderList()
-                    .forEach(item -> orderSns.add(item.getOrderId()));
-            TiktokOrderDetailsRequest tiktokOrderDetailsRequest = new TiktokOrderDetailsRequest();
-            tiktokOrderDetailsRequest.setOrderIdList(orderSns);
-            TiktokOrderDetailsResponse tiktokOrderDetailsResponse = tikTokApiService.getOrderDetailsTiktok(
-                    connection.getAccessToken(),
-                    connection.getShopId(),
-                    tiktokOrderDetailsRequest
-            );
-            List<TiktokOrderModel> tiktokOrderModels = new ArrayList<>(tiktokOrderDetailsResponse.getData().getOrderList());
-            tiktokOrderModels.forEach(item -> {
-                ChannelOrder channelOrder = channelOrderRepository.findByConnectionIdAndOrderNumber(connectionId, item.getOrderId());
-                if (channelOrder == null) {
-                    channelOrder = new ChannelOrder();
-                }
-                channelOrder.setConnectionId(connectionId);
-                channelOrder.setOrderNumber(item.getOrderId());
-                channelOrder.setOrderStatus(item.getOrderStatus());
-                channelOrder.setIssuedAt(Utils.getUTCTimestamp());
-                channelOrder.setTrackingCode(item.getTrackingNumber());
-                channelOrder.setTotalAmount(item.getPaymentInfo().getTotalAmount());
-                channelOrder.setShippingCarrier(item.getShippingProvider());
-                channelOrderRepository.save(channelOrder);
-                ChannelOrder finalChannelOrder = channelOrder;
-                item.getItemList().forEach(line -> {
-                    ChannelOrderItem channelOrderItem = channelOrderItemRepository.findByOrderIdAndItemIdAndVariantId(
-                            finalChannelOrder.getId(),
-                            line.getProductId(),
-                            line.getSkuId()
+                    TiktokOrdersResponse tiktokOrdersResponse = tikTokApiService.getOrdersTiktok(
+                            connection.getAccessToken(),
+                            connection.getShopId(),
+                            request
                     );
-                    if (channelOrderItem == null) {
-                        channelOrderItem = new ChannelOrderItem();
+                    if (tiktokOrdersResponse != null
+                        && tiktokOrdersResponse.getData() != null
+                            && tiktokOrdersResponse.getData().getOrderList() != null
+                    ) {
+                        cursor = tiktokOrdersResponse.getData().getNextCursor();
+                        tiktokOrderModels = tiktokOrdersResponse.getData().getOrderList();
+                        List<String> ids = tiktokOrderModels.stream().map(TiktokOrderModel::getOrderId).collect(Collectors.toList());
+                        crawlOrderDetail(connection, ids);
                     }
-                    channelOrderItem.setOrderId(finalChannelOrder.getId());
-                    channelOrderItem.setSku(line.getSellerSku());
-                    channelOrderItem.setQuantity(line.getQuantity());
-                    channelOrderItem.setImage(line.getSkuImage());
-                    channelOrderItem.setPrice(line.getSkuOriginalPrice());
-                    try {
-                        ChannelVariant channelVariant = channelVariantRepository.findByItemIdAndAndVariantId(
-                                channelOrderItem.getItemId(),
-                                channelOrderItem.getVariantId()
-                        );
-                        channelOrderItem.setMappingId(channelVariant.getMappingId());
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                    channelOrderItemRepository.save(channelOrderItem);
-                });
-            });
+                } while (!tiktokOrderModels.isEmpty());
+            }
         } catch (Exception e) {
             e.printStackTrace();
             baseResponse.setError(e.getMessage());
         }
+        return baseResponse;
+    }
+
+    private void crawlOrderDetail (Connection connection, List<String> ids) {
+        try {
+            TiktokOrderDetailsRequest tiktokOrderDetailsRequest = new TiktokOrderDetailsRequest();
+            tiktokOrderDetailsRequest.setOrderIdList(ids);
+            TiktokOrderDetailsResponse response = tikTokApiService.getOrderDetailsTiktok(
+                    connection.getAccessToken(),
+                    connection.getShopId(),
+                    tiktokOrderDetailsRequest
+            );
+            if (response != null
+                && response.getData() != null
+                    && response.getData().getOrderList() != null
+            ) {
+                var orderList = response.getData().getOrderList();
+                orderList.forEach(orderModel -> {
+                    ChannelOrder channelOrder = channelOrderRepository.findByConnectionIdAndOrderNumber(connection.getId(), orderModel.getOrderId());
+                    if (channelOrder == null) {
+                        channelOrder = new ChannelOrder();
+                    }
+                    channelOrder.setConnectionId(connection.getId());
+                    channelOrder.setOrderNumber(orderModel.getOrderId());
+                    channelOrder.setOrderStatus(orderModel.getOrderStatus());
+                    channelOrder.setIssuedAt(Utils.getUTCTimestamp());
+                    channelOrder.setTrackingCode(orderModel.getTrackingNumber());
+                    channelOrder.setTotalAmount(orderModel.getPaymentInfo().getTotalAmount());
+                    channelOrder.setShippingCarrier(orderModel.getShippingProvider());
+                    channelOrderRepository.save(channelOrder);
+                    crawlChannelOrderItem(orderModel, channelOrder.getId());
+                });
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void crawlChannelOrderItem (TiktokOrderModel tiktokOrderModel, int orderId) {
+        try {
+            var lineItems = tiktokOrderModel.getItemList();
+            lineItems.forEach(lineItem -> {
+                ChannelOrderItem channelOrderItem = channelOrderItemRepository.findByOrderIdAndItemIdAndVariantId(
+                        orderId,
+                        lineItem.getProductId(),
+                        lineItem.getSkuId()
+                );
+                if (channelOrderItem == null) {
+                    channelOrderItem = new ChannelOrderItem();
+                }
+                channelOrderItem.setOrderId(orderId);
+                channelOrderItem.setSku(lineItem.getSellerSku());
+                channelOrderItem.setQuantity(lineItem.getQuantity());
+                channelOrderItem.setImage(lineItem.getSkuImage());
+                channelOrderItem.setPrice(lineItem.getSkuOriginalPrice());
+                channelOrderItem.setItemId(lineItem.getProductId());
+                channelOrderItem.setVariantId(lineItem.getSkuId());
+                channelOrderItem.setName(lineItem.getSkuName());
+                try {
+                    ChannelVariant channelVariant = channelVariantRepository.findByItemIdAndAndVariantId(
+                            channelOrderItem.getItemId(),
+                            channelOrderItem.getVariantId()
+                    );
+                    if (channelVariant != null) {
+                        channelOrderItem.setMappingId(channelVariant.getMappingId());
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                channelOrderItemRepository.save(channelOrderItem);
+            });
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public BaseResponse filterTikTokOrder (TikTokFilterOrderRequest request) {
+        BaseResponse baseResponse = new BaseResponse();
+        List<ChannelOrder> channelOrders = new ArrayList<>();
+        Integer count;
+        Pageable pageable = PageRequest.of(request.getPage(), request.getLimit());
+        if (request.getOrderStatus() == 1) {
+            channelOrders = channelOrderRepository.findAllByConnectionIdInAndOrderNumberContains(
+                request.getConnectionIds(), request.getQuery(), pageable
+            );
+            count = channelOrderRepository.countAllByConnectionIdInAndOrderNumberContains(
+                    request.getConnectionIds(), request.getQuery()
+            );
+        } else {
+            channelOrders = channelOrderRepository.findAllByConnectionIdInAndOrderNumberContainsAndOrderStatusLike(
+                    request.getConnectionIds(), request.getQuery(), request.getOrderStatus(), pageable
+            );
+            count = channelOrderRepository.countAllByConnectionIdInAndOrderNumberContainsAndOrderStatusLike(
+                    request.getConnectionIds(), request.getQuery(), request.getOrderStatus()
+            );
+        }
+        List<TikTokOrderData> tikTokOrderDatas = new ArrayList<>();
+        channelOrders.forEach(channelOrder -> {
+            TikTokOrderData tikTokOrderData = new TikTokOrderData();
+            tikTokOrderData.setTiktokOrder(channelOrder);
+            var channelOrderItems = channelOrderItemRepository.findAllByOrderId(channelOrder.getId());
+            tikTokOrderData.setTiktokOrderItems(channelOrderItems);
+            tikTokOrderDatas.add(tikTokOrderData);
+        });
+        baseResponse.setData(tikTokOrderDatas);
+        baseResponse.setTotal(count);
         return baseResponse;
     }
 

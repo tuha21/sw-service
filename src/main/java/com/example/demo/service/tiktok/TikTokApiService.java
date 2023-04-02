@@ -89,18 +89,30 @@ public class TikTokApiService {
 
     public TiktokOrdersResponse getOrdersTiktok (String token, String shopId, TiktokFilterOrderRequest request) {
         try {
-            return tiktokOrderFeign.filterOrder(TikTokAppConst.APP_KEY, token, shopId, request).getBody();
+            var response = tiktokOrderFeign.filterOrder(TikTokAppConst.APP_KEY, token, shopId, request).getBody();
+            if (response != null) {
+                if (response.getMessage() != null) {
+                    log.error(response.getMessage());
+                }
+                return response;
+            }
         } catch (Exception e) {
-            e.printStackTrace();
+//            e.printStackTrace();
         }
         return null;
     }
 
     public TiktokOrderDetailsResponse getOrderDetailsTiktok (String token, String shopId, TiktokOrderDetailsRequest request) {
         try {
-            return tiktokOrderFeign.getDetails(TikTokAppConst.APP_KEY, token, shopId, request).getBody();
+            var response = tiktokOrderFeign.getDetails(TikTokAppConst.APP_KEY, token, shopId, request).getBody();
+            if (response != null) {
+                if (response.getMessage() != null) {
+                    log.error(response.getMessage());
+                }
+                return response;
+            }
         } catch (Exception e) {
-            e.printStackTrace();
+//            e.printStackTrace();
         }
         return null;
     }

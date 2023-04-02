@@ -13,7 +13,7 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-@Table(name = "channel_orders")
+@Table(name = "channel_order_items")
 public class ChannelOrderItem extends BaseEntity {
 
     private int orderId;
