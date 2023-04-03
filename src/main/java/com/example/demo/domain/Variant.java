@@ -1,6 +1,7 @@
 package com.example.demo.domain;
 
 import com.example.demo.domain.base.BaseEntity;
+import java.math.BigDecimal;
 import lombok.Data;
 
 import javax.persistence.Entity;
@@ -19,6 +20,8 @@ public class Variant extends BaseEntity {
 
     private String image;
 
-    private int quantity;
+    private Integer quantity;
+
+    private BigDecimal price;
 
 }

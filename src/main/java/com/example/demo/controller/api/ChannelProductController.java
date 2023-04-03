@@ -41,4 +41,11 @@ public class ChannelProductController {
         return new ResponseEntity<>(tikTokProductService.quickMapProduct(id), HttpStatus.OK);
     }
 
+    @GetMapping("/create")
+    public ResponseEntity<BaseResponse> create (
+        @RequestParam("id") int id
+    ) {
+        return new ResponseEntity<>(tikTokProductService.create(id), HttpStatus.OK);
+    }
+
 }

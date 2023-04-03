@@ -1,5 +1,6 @@
 package com.example.demo;
 
+import com.example.demo.service.tiktokproduct.TikTokProductService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
@@ -20,7 +21,11 @@ public class DemoApplication implements CommandLineRunner {
         SpringApplication.run(DemoApplication.class, args);
     }
 
+    @Autowired
+    TikTokProductService tikTokProductService;
+
     @Override
     public void run(String... args) throws Exception {
+        tikTokProductService.create(34);
     }
 }

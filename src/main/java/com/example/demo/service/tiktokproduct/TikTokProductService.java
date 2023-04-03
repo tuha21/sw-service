@@ -3,15 +3,17 @@ package com.example.demo.service.tiktokproduct;
 import com.example.demo.common.tiktok.model.product.TikTokProductModel;
 import com.example.demo.common.tiktok.model.product.TiktokSalesAttributes;
 import com.example.demo.common.tiktok.response.product.TiktokProductsResponse;
-import com.example.demo.common.util.Utils;
 import com.example.demo.controller.response.BaseResponse;
 import com.example.demo.controller.response.ChannelProductResponse;
 import com.example.demo.domain.ChannelProduct;
 import com.example.demo.domain.Connection;
+import com.example.demo.domain.Product;
+import com.example.demo.domain.Variant;
 import com.example.demo.domain.base.ChannelVariant;
 import com.example.demo.repository.*;
 import com.example.demo.service.tiktok.TikTokApiService;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -107,6 +109,7 @@ public class TikTokProductService {
             }
             if (!product.getSkus().isEmpty()) {
                 ChannelProduct finalChannelProduct = channelProduct;
+                ChannelProduct finalChannelProduct1 = channelProduct;
                 product.getSkus().forEach(sku -> {
                     var variant = channelVariantRepository.findByItemIdAndAndVariantId(itemId, sku.getId());
                     if (variant == null) {
@@ -119,6 +122,9 @@ public class TikTokProductService {
                     variant.setVariantId(sku.getId());
                     variant.setName(product.getProductName());
                     variant.setImage(finalChannelProduct.getImage());
+                    variant.setQuantity(sku.getStockInfos().get(0).getAvailableStock());
+                    variant.setPrice(new BigDecimal(sku.getPrice().getOriginalPrice()));
+                    variant.setChannelProductId(finalChannelProduct1.getId());
                     if (!sku.getSalesAttributes().isEmpty()) {
                         List<String> images = new ArrayList<>();
                         StringBuilder variantName = new StringBuilder();
@@ -221,6 +227,67 @@ public class TikTokProductService {
         } catch (Exception e) {
             log.error("processProductMapping | {}", e.toString());
         }
+    }
+
+    public BaseResponse create (int id) {
+        var response = new BaseResponse();
+        try {
+            var channelVariantToCreate = channelVariantRepository.findById(id);
+            if (channelVariantToCreate.isPresent()) {
+                var channelProductOptional = channelProductRepository.findById(channelVariantToCreate.get().getChannelProductId());
+                if (channelProductOptional.isPresent()) {
+                    var channelProduct = channelProductOptional.get();
+                    var channelVariants = channelVariantRepository.findAllByItemId(channelProduct.getItemId());
+                    if (channelVariants != null && channelVariants.size() > 0) {
+                        Product product;
+                        List<String> skus = channelVariants.stream().map(ChannelVariant::getSku).collect(Collectors.toList());
+                        var variants = variantRepository.findAllBySkuIn(skus);
+                        if (variants != null && variants.size() > 0) {
+                            var productOptional = productRepository.findById(variants.get(0).getProductId());
+                            product = productOptional.orElseGet(Product::new);
+                        } else {
+                            product = new Product();
+                        }
+                        product.setTenantId(channelProduct.getTenantId());
+                        product.setImage(channelProduct.getImage());
+                        product.setName(channelProduct.getName());
+                        productRepository.save(product);
+                        Product finalProduct = product;
+                        if (variants != null && variants.size() > 0) {
+                            channelVariants.forEach(channelVariant -> {
+                                var variant = variants.stream().filter(item -> item.getSku().equalsIgnoreCase(channelVariant.getSku())).findFirst().orElse(null);
+                                if (variant == null) {
+                                    variant = new Variant();
+                                }
+                                variant.setProductId(finalProduct.getId());
+                                variant.setSku(channelVariant.getSku());
+                                variant.setName(channelVariant.getName());
+                                variant.setQuantity(channelVariant.getQuantity());
+                                variant.setPrice(channelVariant.getPrice());
+                                variant.setImage(channelVariant.getImage());
+                                variantRepository.save(variant);
+                            });
+                        } else {
+                            List<Variant> newVariants = channelVariants.stream().map(channelVariant -> {
+                                Variant newVariant = new Variant();
+                                newVariant.setProductId(finalProduct.getId());
+                                newVariant.setSku(channelVariant.getSku());
+                                newVariant.setName(channelVariant.getName());
+                                newVariant.setQuantity(channelVariant.getQuantity());
+                                newVariant.setImage(channelVariant.getImage());
+                                newVariant.setPrice(channelVariant.getPrice());
+                                return newVariant;
+                            }).collect(Collectors.toList());
+                            variantRepository.saveAll(newVariants);
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            response.setError(e.toString());
+            e.printStackTrace();
+        }
+        return response;
     }
 
 }
