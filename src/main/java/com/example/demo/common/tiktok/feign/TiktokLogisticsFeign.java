@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 @Component
 @FeignClient(
     name = "TikTokLogisticsFeign",
-    url = "${tiktok.apiUrl}",
+    url = "https://open-api.tiktokglobalshop.com",
     configuration = TiktokFeignConfig.class
 )
 public interface TiktokLogisticsFeign {
