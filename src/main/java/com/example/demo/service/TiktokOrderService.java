@@ -194,6 +194,12 @@ public class TiktokOrderService {
             TikTokOrderData tikTokOrderData = new TikTokOrderData();
             tikTokOrderData.setTiktokOrder(channelOrder);
             var channelOrderItems = channelOrderItemRepository.findAllByOrderId(channelOrder.getId());
+            channelOrderItems.forEach(item -> {
+                if (item.getMappingId() != 0) {
+                    var variantOpt = variantRepository.findById(item.getMappingId());
+                    variantOpt.ifPresent(item::setVariant);
+                }
+            });
             tikTokOrderData.setTiktokOrderItems(channelOrderItems);
             tikTokOrderDatas.add(tikTokOrderData);
         });

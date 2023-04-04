@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 
 import javax.persistence.Entity;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 import java.math.BigDecimal;
 
 @Data
@@ -25,5 +26,8 @@ public class ChannelOrderItem extends BaseEntity {
     private String image;
     private int mappingId;
     private String name;
+
+    @Transient
+    private Variant variant;
 
 }
