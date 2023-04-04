@@ -20,8 +20,18 @@ public class Variant extends BaseEntity {
 
     private String image;
 
-    private Integer quantity;
+    private int onHand;
 
-    private BigDecimal price;
+    private int available;
+
+    private int commited;
+
+    private BigDecimal retailPrice;
+
+    private BigDecimal wholePrice;
+
+    private BigDecimal importPrice;
+
+    private BigDecimal costPrice;
 
 }

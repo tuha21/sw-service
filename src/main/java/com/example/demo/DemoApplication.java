@@ -21,11 +21,7 @@ public class DemoApplication implements CommandLineRunner {
         SpringApplication.run(DemoApplication.class, args);
     }
 
-    @Autowired
-    TikTokProductService tikTokProductService;
-
     @Override
     public void run(String... args) throws Exception {
-        tikTokProductService.create(34);
     }
 }
