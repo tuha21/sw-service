@@ -23,6 +23,7 @@ public class ChannelOrder extends BaseEntity {
     private String shippingCarrier;
     private String trackingCode;
     private BigDecimal totalAmount;
+    private Boolean hasPrint;
 
 
 }

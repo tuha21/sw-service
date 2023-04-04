@@ -36,4 +36,11 @@ public class ChannelOrderController {
         return new ResponseEntity<>(tiktokOrderService.filterTikTokOrder(request), HttpStatus.OK);
     }
 
+    @GetMapping("/print")
+    public ResponseEntity<BaseResponse> printOrder (
+        @RequestParam("orderId") int orderId
+    ) {
+        return new ResponseEntity<>(tiktokOrderService.print(orderId), HttpStatus.OK);
+    }
+
 }

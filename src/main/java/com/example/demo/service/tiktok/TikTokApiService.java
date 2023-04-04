@@ -2,6 +2,7 @@ package com.example.demo.service.tiktok;
 
 import com.example.demo.common.consts.TikTokAppConst;
 import com.example.demo.common.tiktok.feign.TikTokAuthFeign;
+import com.example.demo.common.tiktok.feign.TiktokLogisticsFeign;
 import com.example.demo.common.tiktok.feign.TiktokOrderFeign;
 import com.example.demo.common.tiktok.feign.TiktokProductFeign;
 import com.example.demo.common.tiktok.feign.TiktokShopFeign;
@@ -12,6 +13,7 @@ import com.example.demo.common.tiktok.request.order.TiktokOrderDetailsRequest;
 import com.example.demo.common.tiktok.request.product.TiktokProductsRequest;
 import com.example.demo.common.tiktok.response.TiktokAccessTokenResponse;
 import com.example.demo.common.tiktok.response.TiktokAuthorizedShopResponse;
+import com.example.demo.common.tiktok.response.logistics.shippingdocument.TiktokShippingDocumentResponse;
 import com.example.demo.common.tiktok.response.order.TiktokOrderDetailsResponse;
 import com.example.demo.common.tiktok.response.order.TiktokOrdersResponse;
 import com.example.demo.common.tiktok.response.product.TiktokProductDetailResponse;
@@ -32,6 +34,7 @@ public class TikTokApiService {
     private final TiktokProductFeign tiktokProductFeign;
 
     private final TiktokOrderFeign tiktokOrderFeign;
+    private final TiktokLogisticsFeign tiktokLogisticsFeign;
 
     public TiktokAccessTokenResponse getAccessTokenTikTok(String code) {
         try {
@@ -105,6 +108,21 @@ public class TikTokApiService {
     public TiktokOrderDetailsResponse getOrderDetailsTiktok (String token, String shopId, TiktokOrderDetailsRequest request) {
         try {
             var response = tiktokOrderFeign.getDetails(TikTokAppConst.APP_KEY, token, shopId, request).getBody();
+            if (response != null) {
+                if (response.getMessage() != null) {
+                    log.error(response.getMessage());
+                }
+                return response;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public TiktokShippingDocumentResponse getShippingDocument (String token, String shopId, String orderNumber, String type) {
+        try {
+            var response = tiktokLogisticsFeign.getShippingDocument(TikTokAppConst.APP_KEY, token, shopId, orderNumber, type).getBody();
             if (response != null) {
                 if (response.getMessage() != null) {
                     log.error(response.getMessage());

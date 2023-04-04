@@ -1,6 +1,7 @@
 package com.example.demo.service;
 
 import com.example.demo.common.tiktok.model.order.TiktokOrderModel;
+import com.example.demo.common.tiktok.request.TiktokBaseRequest;
 import com.example.demo.common.tiktok.request.order.TiktokFilterOrderRequest;
 import com.example.demo.common.tiktok.request.order.TiktokOrderDetailsRequest;
 import com.example.demo.common.tiktok.response.order.TiktokOrderDetailsResponse;
@@ -17,9 +18,11 @@ import com.example.demo.repository.ChannelOrderItemRepository;
 import com.example.demo.repository.ChannelOrderRepository;
 import com.example.demo.repository.ChannelVariantRepository;
 import com.example.demo.repository.ConnectionRepository;
+import com.example.demo.repository.VariantRepository;
 import com.example.demo.service.tiktok.TikTokApiService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -38,6 +41,7 @@ public class TiktokOrderService {
     private final ChannelOrderRepository channelOrderRepository;
     private final ChannelOrderItemRepository channelOrderItemRepository;
     private final ChannelVariantRepository channelVariantRepository;
+    private final VariantRepository variantRepository;
 
     public BaseResponse getTikTokOrders(int connectionId, Integer fromDate, Integer toDate) {
         BaseResponse baseResponse = new BaseResponse();
@@ -138,8 +142,14 @@ public class TiktokOrderService {
                             channelOrderItem.getItemId(),
                             channelOrderItem.getVariantId()
                     );
-                    if (channelVariant != null) {
+                    if (channelVariant != null && channelVariant.getId() != 0) {
                         channelOrderItem.setMappingId(channelVariant.getMappingId());
+                        var variantOptional = variantRepository.findById(channelOrderItem.getMappingId());
+                        if (variantOptional.isPresent()) {
+                            var variant = variantOptional.get();
+                            variant.setAvailable(variant.getAvailable() - channelOrderItem.getQuantity());
+                            variantRepository.save(variant);
+                        }
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -182,6 +192,34 @@ public class TiktokOrderService {
         baseResponse.setData(tikTokOrderDatas);
         baseResponse.setTotal(count);
         return baseResponse;
+    }
+
+    public BaseResponse print (int orderId) {
+        BaseResponse response = new BaseResponse();
+        var channelOrderOptional = channelOrderRepository.findById(orderId);
+        if (channelOrderOptional.isPresent()) {
+            var channelOrder = channelOrderOptional.get();
+            var connectionOptional = connectionRepository.findById(channelOrder.getConnectionId());
+            if (connectionOptional.isPresent()) {
+                var connection = connectionOptional.get();
+                var tiktokBill = tikTokApiService.getShippingDocument(connection.getAccessToken(), connection.getShopId(), channelOrder.getOrderNumber(), "SL_PL");
+                if (tiktokBill != null) {
+                    if (tiktokBill.getData() != null && StringUtils
+                        .isNotBlank(tiktokBill.getData().getDocUrl())) {
+                        response.setData(tiktokBill.getData().getDocUrl());
+                        channelOrder.setHasPrint(true);
+                        channelOrderRepository.save(channelOrder);
+                    } else if (StringUtils.isNotBlank(tiktokBill.getMessage())) {
+                        response.setError(tiktokBill.getMessage());
+                    } else {
+                        response.setError("Có lỗi xảy ra");
+                    }
+                } else {
+                    response.setError("Có lỗi xảy ra");
+                }
+            }
+        }
+        return response;
     }
 
 }
