@@ -1,6 +1,7 @@
 package com.example.demo.domain;
 
 import com.example.demo.domain.base.BaseEntity;
+import javax.persistence.Transient;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -25,5 +26,8 @@ public class ChannelOrderItem extends BaseEntity {
     private String image;
     private int mappingId;
     private String name;
+
+    @Transient
+    private Variant variant;
 
 }

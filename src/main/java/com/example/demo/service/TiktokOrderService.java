@@ -54,8 +54,8 @@ public class TiktokOrderService {
                 do {
                     tiktokOrderModels = new ArrayList<>();
                     TiktokFilterOrderRequest request = new TiktokFilterOrderRequest();
-//                    request.setUpdateTimeFrom(fromDate.longValue());
-//                    request.setUpdateTimeTo(toDate.longValue());
+                    request.setUpdateTimeFrom(fromDate.longValue());
+                    request.setUpdateTimeTo(toDate.longValue());
                     request.setPageSize(20);
                     request.setCursor(cursor);
 
@@ -186,6 +186,12 @@ public class TiktokOrderService {
             TikTokOrderData tikTokOrderData = new TikTokOrderData();
             tikTokOrderData.setTiktokOrder(channelOrder);
             var channelOrderItems = channelOrderItemRepository.findAllByOrderId(channelOrder.getId());
+            channelOrderItems.forEach(channelOrderItem -> {
+                if (channelOrderItem.getMappingId() != 0) {
+                    var variantOptional = variantRepository.findById(channelOrder.getId());
+                    variantOptional.ifPresent(channelOrderItem::setVariant);
+                }
+            });
             tikTokOrderData.setTiktokOrderItems(channelOrderItems);
             tikTokOrderDatas.add(tikTokOrderData);
         });
