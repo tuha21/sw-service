@@ -43,4 +43,12 @@ public class ChannelOrderController {
         return new ResponseEntity<>(tiktokOrderService.print(orderId), HttpStatus.OK);
     }
 
+    @GetMapping("/confirm")
+    public ResponseEntity<BaseResponse> confirmOrder (
+        @RequestParam("orderId") int orderId,
+        @RequestParam("type") int type
+    ) {
+        return new ResponseEntity<>(tiktokOrderService.confirm(orderId, type), HttpStatus.OK);
+    }
+
 }

@@ -1,7 +1,11 @@
 package com.example.demo.service;
 
+import com.example.demo.common.tiktok.model.fulfillment.TiktokFailPackagesModel;
 import com.example.demo.common.tiktok.model.order.TiktokOrderModel;
 import com.example.demo.common.tiktok.request.TiktokBaseRequest;
+import com.example.demo.common.tiktok.request.fulfillment.TiktokPickUp;
+import com.example.demo.common.tiktok.request.fulfillment.TiktokSelfShipment;
+import com.example.demo.common.tiktok.request.fulfillment.TiktokShipPackageRequest;
 import com.example.demo.common.tiktok.request.order.TiktokFilterOrderRequest;
 import com.example.demo.common.tiktok.request.order.TiktokOrderDetailsRequest;
 import com.example.demo.common.tiktok.response.order.TiktokOrderDetailsResponse;
@@ -232,6 +236,67 @@ public class TiktokOrderService {
                     response.setError("Có lỗi xảy ra");
                 }
             }
+        }
+        return response;
+    }
+
+    public BaseResponse confirm (int orderId, int type) {
+        BaseResponse response = new BaseResponse();
+        try {
+            var channelOrderOptional = channelOrderRepository.findById(orderId);
+            if (channelOrderOptional.isPresent()) {
+                var channelOrder = channelOrderOptional.get();
+                var connectionOptional = connectionRepository.findById(channelOrder.getConnectionId());
+                if (connectionOptional.isPresent()) {
+                    var connection = connectionOptional.get();
+
+                    List<String> orderIdList = new ArrayList<>();
+                    orderIdList.add(channelOrder.getOrderNumber());
+
+                    var tiktokOrderDetailsRequest = new TiktokOrderDetailsRequest();
+                    tiktokOrderDetailsRequest.setOrderIdList(orderIdList);
+                    TiktokOrderDetailsResponse tiktokOrderDetailResponse = tikTokApiService.getOrderDetailsTiktok(connection.getAccessToken(), connection.getShopId(), tiktokOrderDetailsRequest);
+                    if (tiktokOrderDetailResponse.getData() != null
+                        && tiktokOrderDetailResponse.getData().getOrderList() != null
+                        && tiktokOrderDetailResponse.getData().getOrderList().size() > 0
+                        && tiktokOrderDetailResponse.getData().getOrderList().get(0) != null
+                    ) {
+                        var tiktokOrderModel = tiktokOrderDetailResponse.getData().getOrderList().get(0);
+                        TiktokShipPackageRequest shipPackageRequest = new TiktokShipPackageRequest();
+                        shipPackageRequest.setPackageId(tiktokOrderModel.getPackageList().get(0).getPackageId());
+                        shipPackageRequest.setPickUpType(type);
+                        if (type == 1) {
+                            var pickUp = new TiktokPickUp();
+                            shipPackageRequest.setPickUp(pickUp);
+                        }
+                        if (type == 2) {
+                            var selfShipment = new TiktokSelfShipment();
+                            selfShipment.setShippingProviderId(tiktokOrderModel.getShippingProviderId());
+                            selfShipment.setTrackingNumber(tiktokOrderModel.getTrackingNumber());
+                            shipPackageRequest.setSelfShipment(selfShipment);
+                        }
+                        var confirmResponse = tikTokApiService.shipPackage(connection.getAccessToken(), connection.getShopId(), shipPackageRequest);
+                        if (confirmResponse != null) {
+                            if (confirmResponse.getData() != null && confirmResponse.getData().getFailPackages().size() > 0) {
+                                StringBuilder errorMessage = new StringBuilder();
+                                for (TiktokFailPackagesModel failPackage : confirmResponse.getData().getFailPackages()) {
+                                    errorMessage
+                                        .append(failPackage.getPackageId())
+                                        .append(" - ")
+                                        .append(failPackage.getFailReason());
+                                }
+                                response.setError(errorMessage.toString());
+                            }
+                        } else {
+                            response.setError("Có lỗi xảy ra khi xác nhận đơn hàng");
+                        }
+                    } else {
+                        response.setError("Có lỗi xảy ra khi lấy thông ti đơn hàng");
+                    }
+                }
+            }
+        } catch (Exception e) {
+            response.setError(e.toString());
         }
         return response;
     }
