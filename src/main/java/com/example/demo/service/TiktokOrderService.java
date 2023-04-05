@@ -277,7 +277,10 @@ public class TiktokOrderService {
                         }
                         var confirmResponse = tikTokApiService.shipPackage(connection.getAccessToken(), connection.getShopId(), shipPackageRequest);
                         if (confirmResponse != null) {
-                            if (confirmResponse.getData() != null && confirmResponse.getData().getFailPackages().size() > 0) {
+                            if (confirmResponse.getData() != null
+                                && confirmResponse.getData().getFailPackages() != null
+                                && confirmResponse.getData().getFailPackages().size() > 0)
+                            {
                                 StringBuilder errorMessage = new StringBuilder();
                                 for (TiktokFailPackagesModel failPackage : confirmResponse.getData().getFailPackages()) {
                                     errorMessage
