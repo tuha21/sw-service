@@ -22,11 +22,11 @@ public class ChannelOrderController {
 
     @GetMapping("/crawl")
     public ResponseEntity<BaseResponse> crawlOrders (
-            @RequestParam("connectionId") int connectionId,
+            @RequestParam("connectionIds") List<Integer> connectionIds,
             @RequestParam("fromDate") Integer fromDate,
             @RequestParam("toDate") Integer toDate
     ) {
-        return new ResponseEntity<>(tiktokOrderService.getTikTokOrders(connectionId, fromDate, toDate), HttpStatus.OK);
+        return new ResponseEntity<>(tiktokOrderService.getTikTokOrders(connectionIds, fromDate, toDate), HttpStatus.OK);
     }
 
     @GetMapping("/filter")

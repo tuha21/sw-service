@@ -25,6 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -43,43 +44,50 @@ public class TiktokOrderService {
     private final ChannelVariantRepository channelVariantRepository;
     private final VariantRepository variantRepository;
 
-    public BaseResponse getTikTokOrders(int connectionId, Integer fromDate, Integer toDate) {
+    public BaseResponse getTikTokOrders(List<Integer> connectionIds, Integer fromDate, Integer toDate) {
         BaseResponse baseResponse = new BaseResponse();
         try {
-            var connectionOptional = connectionRepository.findById(connectionId);
-            if (connectionOptional.isPresent()) {
-                Connection connection = connectionOptional.get();
-                List<TiktokOrderModel> tiktokOrderModels;
-                String cursor = null;
-                do {
-                    tiktokOrderModels = new ArrayList<>();
-                    TiktokFilterOrderRequest request = new TiktokFilterOrderRequest();
-                    request.setUpdateTimeFrom(fromDate.longValue());
-                    request.setUpdateTimeTo(toDate.longValue());
-                    request.setPageSize(20);
-                    request.setCursor(cursor);
-
-                    TiktokOrdersResponse tiktokOrdersResponse = tikTokApiService.getOrdersTiktok(
-                            connection.getAccessToken(),
-                            connection.getShopId(),
-                            request
-                    );
-                    if (tiktokOrdersResponse != null
-                        && tiktokOrdersResponse.getData() != null
-                            && tiktokOrdersResponse.getData().getOrderList() != null
-                    ) {
-                        cursor = tiktokOrdersResponse.getData().getNextCursor();
-                        tiktokOrderModels = tiktokOrdersResponse.getData().getOrderList();
-                        List<String> ids = tiktokOrderModels.stream().map(TiktokOrderModel::getOrderId).collect(Collectors.toList());
-                        crawlOrderDetail(connection, ids);
-                    }
-                } while (!tiktokOrderModels.isEmpty());
-            }
+            connectionIds.forEach(connectionId -> {
+                crawlOrderFuture(connectionId, fromDate, toDate);
+            });
         } catch (Exception e) {
             e.printStackTrace();
             baseResponse.setError(e.getMessage());
         }
         return baseResponse;
+    }
+
+    @Async
+    public void crawlOrderFuture (int connectionId, Integer from, Integer to) {
+        var connectionOptional = connectionRepository.findById(connectionId);
+        if (connectionOptional.isPresent()) {
+            Connection connection = connectionOptional.get();
+            List<TiktokOrderModel> tiktokOrderModels;
+            String cursor = null;
+            do {
+                tiktokOrderModels = new ArrayList<>();
+                TiktokFilterOrderRequest request = new TiktokFilterOrderRequest();
+                request.setUpdateTimeFrom(from.longValue());
+                request.setUpdateTimeTo(to.longValue());
+                request.setPageSize(20);
+                request.setCursor(cursor);
+
+                TiktokOrdersResponse tiktokOrdersResponse = tikTokApiService.getOrdersTiktok(
+                        connection.getAccessToken(),
+                        connection.getShopId(),
+                        request
+                );
+                if (tiktokOrdersResponse != null
+                        && tiktokOrdersResponse.getData() != null
+                        && tiktokOrdersResponse.getData().getOrderList() != null
+                ) {
+                    cursor = tiktokOrdersResponse.getData().getNextCursor();
+                    tiktokOrderModels = tiktokOrdersResponse.getData().getOrderList();
+                    List<String> ids = tiktokOrderModels.stream().map(TiktokOrderModel::getOrderId).collect(Collectors.toList());
+                    crawlOrderDetail(connection, ids);
+                }
+            } while (!tiktokOrderModels.isEmpty());
+        }
     }
 
     private void crawlOrderDetail (Connection connection, List<String> ids) {
@@ -186,10 +194,10 @@ public class TiktokOrderService {
             TikTokOrderData tikTokOrderData = new TikTokOrderData();
             tikTokOrderData.setTiktokOrder(channelOrder);
             var channelOrderItems = channelOrderItemRepository.findAllByOrderId(channelOrder.getId());
-            channelOrderItems.forEach(channelOrderItem -> {
-                if (channelOrderItem.getMappingId() != 0) {
-                    var variantOptional = variantRepository.findById(channelOrder.getId());
-                    variantOptional.ifPresent(channelOrderItem::setVariant);
+            channelOrderItems.forEach(item -> {
+                if (item.getMappingId() != 0) {
+                    var variantOpt = variantRepository.findById(item.getMappingId());
+                    variantOpt.ifPresent(item::setVariant);
                 }
             });
             tikTokOrderData.setTiktokOrderItems(channelOrderItems);
