@@ -104,7 +104,7 @@ public class TiktokOrderService {
                     channelOrder.setConnectionId(connection.getId());
                     channelOrder.setOrderNumber(orderModel.getOrderId());
                     channelOrder.setOrderStatus(orderModel.getOrderStatus());
-                    channelOrder.setIssuedAt(Utils.getUTCTimestamp());
+                    channelOrder.setIssuedAt(Long.valueOf(orderModel.getCreateTime()) / 1000);
                     channelOrder.setTrackingCode(orderModel.getTrackingNumber());
                     channelOrder.setTotalAmount(orderModel.getPaymentInfo().getTotalAmount());
                     channelOrder.setShippingCarrier(orderModel.getShippingProvider());
