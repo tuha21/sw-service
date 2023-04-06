@@ -31,6 +31,5 @@ public class DemoApplication implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        var products = channelProductRepository.findAll();
     }
 }
