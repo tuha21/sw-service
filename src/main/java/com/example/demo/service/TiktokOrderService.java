@@ -304,4 +304,29 @@ public class TiktokOrderService {
         return response;
     }
 
+    public BaseResponse getOrderHistory (int orderId) {
+        var response = new BaseResponse();
+        var histories = new ArrayList<>();
+
+        var channelOrderOptional= channelOrderRepository.findById(orderId);
+        if (channelOrderOptional.isPresent()) {
+            var channelOrder = channelOrderOptional.get();
+            var connectionOptional = connectionRepository.findById(channelOrder.getConnectionId());
+            if (connectionOptional.isPresent()) {
+                var connection = connectionOptional.get();
+                var tiktokHistoryResponse = tikTokApiService.getShippingInfo(connection.getAccessToken(), connection.getShopId(), channelOrder.getOrderNumber());
+                if (tiktokHistoryResponse != null
+                    && tiktokHistoryResponse.getData() != null
+                    && tiktokHistoryResponse.getData().getTrackingInfoList() != null
+                ) {
+                    tiktokHistoryResponse.getData().getTrackingInfoList().forEach(item -> {
+                        histories.addAll(item.getTrackingInfoItems());
+                    });
+                }
+            }
+        }
+        response.setData(histories);
+        return response;
+    }
+
 }

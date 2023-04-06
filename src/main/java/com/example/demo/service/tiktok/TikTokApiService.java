@@ -17,6 +17,7 @@ import com.example.demo.common.tiktok.response.TiktokAccessTokenResponse;
 import com.example.demo.common.tiktok.response.TiktokAuthorizedShopResponse;
 import com.example.demo.common.tiktok.response.fulfillment.TiktokShipPackageReponse;
 import com.example.demo.common.tiktok.response.logistics.shippingdocument.TiktokShippingDocumentResponse;
+import com.example.demo.common.tiktok.response.logistics.shippinginfo.TiktokShippingInfoResponse;
 import com.example.demo.common.tiktok.response.order.TiktokOrderDetailsResponse;
 import com.example.demo.common.tiktok.response.order.TiktokOrdersResponse;
 import com.example.demo.common.tiktok.response.product.TiktokProductDetailResponse;
@@ -158,6 +159,21 @@ public class TikTokApiService {
             log.error("shipPackage | {}", e.contentUTF8());
         } catch (Exception ex) {
             log.error("ERROR | {}", ex.toString());
+        }
+        return null;
+    }
+
+    public TiktokShippingInfoResponse getShippingInfo (String token, String shopId, String orderNumber) {
+        try {
+            var response = tiktokLogisticsFeign.getShippingInfo(TikTokAppConst.APP_KEY, token, shopId, orderNumber).getBody();
+            if (response != null) {
+                if (response.getMessage() != null) {
+                    log.error(response.getMessage());
+                }
+                return response;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
         return null;
     }

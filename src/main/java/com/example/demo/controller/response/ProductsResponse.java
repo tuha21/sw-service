@@ -9,5 +9,6 @@ import java.util.List;
 public class ProductsResponse {
 
     private List<Product> products;
+    private int total;
 
 }

@@ -10,4 +10,6 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
 
     List<Product> findAllByTenantIdAndNameContains(int tenantId, String name, Pageable pageable);
 
+    int countAllByTenantIdAndNameContains(int tenantId, String name);
+
 }

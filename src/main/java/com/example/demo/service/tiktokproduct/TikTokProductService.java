@@ -5,6 +5,7 @@ import com.example.demo.common.tiktok.model.product.TiktokSalesAttributes;
 import com.example.demo.common.tiktok.response.product.TiktokProductsResponse;
 import com.example.demo.controller.response.BaseResponse;
 import com.example.demo.controller.response.ChannelProductResponse;
+import com.example.demo.controller.response.ChannelProductsResponse;
 import com.example.demo.domain.ChannelProduct;
 import com.example.demo.domain.Connection;
 import com.example.demo.domain.Product;
@@ -154,13 +155,16 @@ public class TikTokProductService {
             List<ChannelProductResponse> channelProductResponses = new ArrayList<>();
             List<ChannelProduct> products;
             Pageable pageable = PageRequest.of(page, 10);
-
+            int total = 0;
             if (mappingStatus == 1) {
                 products = channelProductRepository.findAllByConnectionIdInAndNameContains(connectionIds, query, pageable);
+                total = channelProductRepository.countAllByConnectionIdInAndNameContains(connectionIds, query);
             } else if(mappingStatus == 2) {
                 products = channelProductRepository.findAllByConnectionIdInAndNameContainsAndMappingStatus(connectionIds, query, true, pageable);
+                total = channelProductRepository.countAllByConnectionIdInAndNameContainsAndMappingStatus(connectionIds, query, true);
             } else {
                 products = channelProductRepository.findAllByConnectionIdInAndNameContainsAndMappingStatus(connectionIds, query, false, pageable);
+                total = channelProductRepository.countAllByConnectionIdInAndNameContainsAndMappingStatus(connectionIds, query, false);
             }
             if (products != null) {
                 CompletableFuture.allOf(
@@ -170,7 +174,10 @@ public class TikTokProductService {
                                 .toArray(CompletableFuture[]::new)
                 ).get();
             }
-            baseResponse.setData(channelProductResponses);
+            var channelProductsResponse = new ChannelProductsResponse();
+            channelProductsResponse.setTotal(total);
+            channelProductsResponse.setProducts(channelProductResponses);
+            baseResponse.setData(channelProductsResponse);
         } catch (Exception e) {
             e.printStackTrace();
             baseResponse.setError(e.toString());
@@ -208,6 +215,18 @@ public class TikTokProductService {
             } else {
                 response.setError("Không tìm thấy sản phẩm có SKU tương ứng");
             }
+        }
+        return response;
+    }
+
+    public BaseResponse unMapProduct (int tiktokVariantId) {
+        var response = new BaseResponse();
+        var tiktokVariantOptional = channelVariantRepository.findById(tiktokVariantId);
+        if (tiktokVariantOptional.isPresent()) {
+            ChannelVariant tiktokVariant = tiktokVariantOptional.get();
+            tiktokVariant.setMappingId(0);
+            channelVariantRepository.save(tiktokVariant);
+            processProductMapping(tiktokVariant.getItemId());
         }
         return response;
     }

@@ -20,6 +20,7 @@ public class ProductService {
         BaseResponse baseResponse = new BaseResponse();
         Pageable pageable = PageRequest.of(page, limit);
         var products = productRepository.findAllByTenantIdAndNameContains(tenantId, query, pageable);
+        var total = productRepository.countAllByTenantIdAndNameContains(tenantId, query);
         if (products != null) {
             products.forEach(product -> {
                 var variants = variantRepository.findAllByProductId(product.getId());
@@ -28,6 +29,7 @@ public class ProductService {
         }
         ProductsResponse productsResponse = new ProductsResponse();
         productsResponse.setProducts(products);
+        productsResponse.setTotal(total);
         baseResponse.setData(productsResponse);
         return baseResponse;
     }
