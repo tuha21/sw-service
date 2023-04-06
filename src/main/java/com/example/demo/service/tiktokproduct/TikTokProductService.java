@@ -253,6 +253,10 @@ public class TikTokProductService {
         try {
             var channelVariantToCreate = channelVariantRepository.findById(id);
             if (channelVariantToCreate.isPresent()) {
+                var variantOld = variantRepository.findBySku(channelVariantToCreate.get().getSku());
+                if (variantOld != null) {
+                    response.setError("SKU đã tồn tại");
+                }
                 var channelProductOptional = channelProductRepository.findById(channelVariantToCreate.get().getChannelProductId());
                 if (channelProductOptional.isPresent()) {
                     var channelProduct = channelProductOptional.get();

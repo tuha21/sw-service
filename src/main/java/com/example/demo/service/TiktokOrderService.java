@@ -120,6 +120,7 @@ public class TiktokOrderService {
                     channelOrder.setTrackingCode(orderModel.getTrackingNumber());
                     channelOrder.setTotalAmount(orderModel.getPaymentInfo().getTotalAmount());
                     channelOrder.setShippingCarrier(orderModel.getShippingProvider());
+                    channelOrder.setPaymentMethod(orderModel.getPaymentMethod());
                     channelOrderRepository.save(channelOrder);
                     crawlChannelOrderItem(orderModel, channelOrder.getId());
                 });
