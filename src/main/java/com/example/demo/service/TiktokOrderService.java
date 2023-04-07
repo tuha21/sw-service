@@ -29,6 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -177,7 +178,7 @@ public class TiktokOrderService {
         BaseResponse baseResponse = new BaseResponse();
         List<ChannelOrder> channelOrders = new ArrayList<>();
         Integer count;
-        Pageable pageable = PageRequest.of(request.getPage(), request.getLimit());
+        Pageable pageable = PageRequest.of(request.getPage(), request.getLimit(), Sort.by("issued_at").descending());
         if (request.getOrderStatus() == 1) {
             channelOrders = channelOrderRepository.findAllByConnectionIdInAndOrderNumberContains(
                 request.getConnectionIds(), request.getQuery(), pageable
