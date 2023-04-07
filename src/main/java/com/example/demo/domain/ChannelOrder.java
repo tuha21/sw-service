@@ -24,6 +24,7 @@ public class ChannelOrder extends BaseEntity {
     private String trackingCode;
     private BigDecimal totalAmount;
     private Boolean hasPrint;
+    private String paymentMethod;
 
 
 }
