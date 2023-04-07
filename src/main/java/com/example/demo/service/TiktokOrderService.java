@@ -18,6 +18,7 @@ import com.example.demo.domain.ChannelOrder;
 import com.example.demo.domain.ChannelOrderItem;
 import com.example.demo.domain.Connection;
 import com.example.demo.domain.base.ChannelVariant;
+import com.example.demo.model.PrintReportOrderData;
 import com.example.demo.repository.ChannelOrderItemRepository;
 import com.example.demo.repository.ChannelOrderRepository;
 import com.example.demo.repository.ChannelVariantRepository;
@@ -36,6 +37,8 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.springframework.util.CollectionUtils;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @Service
 @RequiredArgsConstructor
@@ -122,6 +125,7 @@ public class TiktokOrderService {
                     channelOrder.setTotalAmount(orderModel.getPaymentInfo().getTotalAmount());
                     channelOrder.setShippingCarrier(orderModel.getShippingProvider());
                     channelOrder.setPaymentMethod(orderModel.getPaymentMethod());
+                    channelOrder.setDateKey(Utils.getDateKey(channelOrder.getIssuedAt()));
                     channelOrderRepository.save(channelOrder);
                     crawlChannelOrderItem(orderModel, channelOrder.getId());
                 });
@@ -328,6 +332,27 @@ public class TiktokOrderService {
             }
         }
         response.setData(histories);
+        return response;
+    }
+
+    public BaseResponse printOrderReport (
+        List<Integer> connectionIds,
+        long from,
+        long to
+    ) {
+        var response = new BaseResponse();
+        var data = channelOrderRepository.printOrderReport(connectionIds.stream().map(String::valueOf).collect(
+            Collectors.joining(",")), Utils.getDateKey(from), Utils.getDateKey(to));
+        var printData = new ArrayList<>();
+        data.forEach(item  -> {
+            var dataRes = new PrintReportOrderData();
+            dataRes.setDateKey(Utils.getStringDateFromDateKey(item.getDateKey()));
+            dataRes.setTotal(item.getTotal());
+            dataRes.setTotalCancelled(item.getTotalCancelled());
+            dataRes.setRevenue(item.getRevenue());
+            printData.add(dataRes);
+        });
+        response.setData(printData);
         return response;
     }
 

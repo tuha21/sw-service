@@ -1,10 +1,12 @@
 package com.example.demo.repository;
 
 import com.example.demo.domain.ChannelOrder;
+import com.example.demo.model.IPrintOrderReport;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
+import org.springframework.data.jpa.repository.Query;
 
 public interface ChannelOrderRepository extends JpaRepository<ChannelOrder, Integer> {
 
@@ -18,5 +20,8 @@ public interface ChannelOrderRepository extends JpaRepository<ChannelOrder, Inte
     Integer countAllByConnectionIdInAndOrderNumberContains (List<Integer> connectionIds, String orderNumber);
 
     Integer countAllByConnectionIdInAndOrderNumberContainsAndOrderStatusLike (List<Integer> connectionIds, String orderNumber, int orderStatus);
+
+    @Query(value = "CALL print_report_order(:connectionIds, :from, :to);", nativeQuery = true)
+    List<IPrintOrderReport> printOrderReport(String connectionIds, int from, int to);
 
 }
