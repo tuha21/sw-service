@@ -179,7 +179,7 @@ public class TiktokOrderService {
         BaseResponse baseResponse = new BaseResponse();
         List<ChannelOrder> channelOrders = new ArrayList<>();
         Integer count;
-        Pageable pageable = PageRequest.of(request.getPage(), request.getLimit(), Sort.by("issued_at").descending());
+        Pageable pageable = PageRequest.of(request.getPage(), request.getLimit(), Sort.by("issuedAt").descending());
         if (request.getOrderStatus() == 1) {
             channelOrders = channelOrderRepository.findAllByConnectionIdInAndOrderNumberContains(
                 request.getConnectionIds(), request.getQuery(), pageable
