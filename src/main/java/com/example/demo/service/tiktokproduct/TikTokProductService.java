@@ -206,14 +206,35 @@ public class TikTokProductService {
         var response = new BaseResponse();
         var tiktokVariantOptional = channelVariantRepository.findById(tiktokVariantId);
         if (tiktokVariantOptional.isPresent()) {
-            var variant = variantRepository.findBySku(tiktokVariantOptional.get().getSku());
-            if (variant != null) {
+            if (tiktokVariantOptional.get().getSku() == null) {
+                response.setError("Sản phẩm phải có sku mới có thể liên kết nhanh");
+            } else {
+                var variant = variantRepository.findBySku(tiktokVariantOptional.get().getSku());
+                if (variant != null) {
+                    ChannelVariant tiktokVariant = tiktokVariantOptional.get();
+                    tiktokVariant.setMappingId(variant.getId());
+                    channelVariantRepository.save(tiktokVariant);
+                    processProductMapping(tiktokVariant.getItemId());
+                } else {
+                    response.setError("Không tìm thấy sản phẩm có SKU tương ứng");
+                }
+            }
+        }
+        return response;
+    }
+
+    public BaseResponse manualMapProduct (int tiktokVariantId, int variantId) {
+        var response = new BaseResponse();
+        var tiktokVariantOptional = channelVariantRepository.findById(tiktokVariantId);
+        if (tiktokVariantOptional.isPresent()) {
+            var variantOptional = variantRepository.findById(variantId);
+            if (variantOptional.isPresent()) {
                 ChannelVariant tiktokVariant = tiktokVariantOptional.get();
-                tiktokVariant.setMappingId(variant.getId());
+                tiktokVariant.setMappingId(variantOptional.get().getId());
                 channelVariantRepository.save(tiktokVariant);
                 processProductMapping(tiktokVariant.getItemId());
             } else {
-                response.setError("Không tìm thấy sản phẩm có SKU tương ứng");
+                response.setError("Không tìm thấy sản phẩm");
             }
         }
         return response;

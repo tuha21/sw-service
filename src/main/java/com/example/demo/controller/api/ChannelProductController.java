@@ -41,6 +41,14 @@ public class ChannelProductController {
         return new ResponseEntity<>(tikTokProductService.quickMapProduct(id), HttpStatus.OK);
     }
 
+    @GetMapping("/manual-map")
+    public ResponseEntity<BaseResponse> manualMap (
+            @RequestParam("id") int id,
+            @RequestParam("variantId") int variantId
+    ) {
+        return new ResponseEntity<>(tikTokProductService.manualMapProduct(id, variantId), HttpStatus.OK);
+    }
+
     @GetMapping("/un-map")
     public ResponseEntity<BaseResponse> unMap (
         @RequestParam("id") int id
