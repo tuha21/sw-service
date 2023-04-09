@@ -9,4 +9,5 @@ import org.springframework.stereotype.Repository;
 public interface ConnectionRepository extends JpaRepository<Connection, Integer> {
     Connection findByTenantIdAndShopId(int tenantId, String shopId);
     List<Connection> findAllByTenantId(int tenantId);
+    List<Connection> findAllByIdIn(List<Integer> ids);
 }

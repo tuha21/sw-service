@@ -341,18 +341,25 @@ public class TiktokOrderService {
         long to
     ) {
         var response = new BaseResponse();
-        var data = channelOrderRepository.printOrderReport(connectionIds.stream().map(String::valueOf).collect(
-            Collectors.joining(",")), Utils.getDateKey(from), Utils.getDateKey(to));
-        var printData = new ArrayList<>();
-        data.forEach(item  -> {
-            var dataRes = new PrintReportOrderData();
-            dataRes.setDateKey(Utils.getStringDateFromDateKey(item.getDateKey()));
-            dataRes.setTotal(item.getTotal());
-            dataRes.setTotalCancelled(item.getTotalCancelled());
-            dataRes.setRevenue(item.getRevenue());
-            printData.add(dataRes);
-        });
-        response.setData(printData);
+        var connections = connectionRepository.findAllByIdIn(connectionIds);
+        if (connections != null) {
+            var data = channelOrderRepository.printOrderReport(connectionIds.stream().map(String::valueOf).collect(
+                    Collectors.joining(",")), Utils.getDateKey(from), Utils.getDateKey(to));
+            List<PrintReportOrderData> printData = new ArrayList<>();
+            data.forEach(item  -> {
+                var dataRes = new PrintReportOrderData();
+                dataRes.setDateKey(Utils.getStringDateFromDateKey(item.getDateKey()));
+                dataRes.setTotal(item.getTotal());
+                dataRes.setTotalCancelled(item.getTotalCancelled());
+                dataRes.setRevenue(item.getRevenue());
+                printData.add(dataRes);
+            });
+            StringBuilder connectionNames = new StringBuilder();
+            for (Connection connection : connections) {
+                connectionNames.append(connection.getName()).append(",");
+            }
+            response.setData(Utils.getReportHtml(printData, connectionNames.toString(), String.valueOf(from), String.valueOf(to)));
+        }
         return response;
     }
 
