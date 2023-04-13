@@ -2,7 +2,9 @@ package com.example.demo.service.tiktokproduct;
 
 import com.example.demo.common.tiktok.model.product.TikTokProductModel;
 import com.example.demo.common.tiktok.model.product.TiktokSalesAttributes;
+import com.example.demo.common.tiktok.request.product.*;
 import com.example.demo.common.tiktok.response.product.TiktokProductsResponse;
+import com.example.demo.common.tiktok.response.product.UpdateProductQuantityResponse;
 import com.example.demo.controller.response.BaseResponse;
 import com.example.demo.controller.response.ChannelProductResponse;
 import com.example.demo.controller.response.ChannelProductsResponse;
@@ -14,8 +16,10 @@ import com.example.demo.domain.base.ChannelVariant;
 import com.example.demo.repository.*;
 import com.example.demo.service.tiktok.TikTokApiService;
 
+import java.lang.reflect.Array;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -342,6 +346,54 @@ public class TikTokProductService {
             e.printStackTrace();
         }
         return response;
+    }
+
+    public BaseResponse sync (int id) {
+        BaseResponse baseResponse = new BaseResponse();
+        try {
+            var channelProductOptional = channelProductRepository.findById(id);
+            if (channelProductOptional.isPresent()) {
+                var channelProduct = channelProductOptional.get();
+                var connectionOpt = connectionRepository.findById(channelProduct.getConnectionId());
+                if (connectionOpt.isPresent()) {
+                    var channelVariants = channelVariantRepository.findAllByItemId(channelProduct.getItemId());
+                    if (channelVariants != null) {
+                        UpdateProductPriceRequest updateProductPriceRequest = new UpdateProductPriceRequest();
+                        UpdateProductQuantityRequest updateProductQuantityRequest = new UpdateProductQuantityRequest();
+
+                        List<UpdateProductPriceSkusRequest> priceRequests = new ArrayList<>();
+                        List<UpdateProductQuantitySkusRequest> qtyRequests = new ArrayList<>();
+                        for (ChannelVariant channelVariant : channelVariants) {
+                            if (channelVariant.getMappingId() != 0) {
+                                var variantOpt = variantRepository.findById(channelVariant.getMappingId());
+                                if (variantOpt.isPresent()) {
+                                    UpdateProductPriceSkusRequest updateProductPriceSkusRequest = new UpdateProductPriceSkusRequest();
+                                    updateProductPriceSkusRequest.setId(channelVariant.getVariantId());
+                                    updateProductPriceSkusRequest.setOriginalPrice(variantOpt.get().getRetailPrice().toString());
+                                    priceRequests.add(updateProductPriceSkusRequest);
+
+                                    UpdateProductQuantitySkusRequest updateProductQuantitySkusRequest = new UpdateProductQuantitySkusRequest();
+                                    updateProductQuantitySkusRequest.setId(channelVariant.getVariantId());
+                                    var stockRequest = new UpdateProductQuantityStockInfosRequest();
+                                    stockRequest.setAvailableStock(variantOpt.get().getAvailable());
+                                    stockRequest.setWareHouseId(connectionOpt.get().getWarehouseId());
+                                    updateProductQuantitySkusRequest.setStockInfos(Collections.singletonList(stockRequest));
+                                }
+                            }
+                        }
+                        updateProductPriceRequest.setProductId(channelProduct.getItemId());
+                        updateProductQuantityRequest.setProductId(channelProduct.getItemId());
+                        updateProductPriceRequest.setSkus(priceRequests);
+                        updateProductQuantityRequest.setSkus(qtyRequests);
+                        tikTokApiService.updatePrice(connectionOpt.get().getAccessToken(), connectionOpt.get().getShopId(), updateProductPriceRequest);
+                        tikTokApiService.updateQty(connectionOpt.get().getAccessToken(), connectionOpt.get().getShopId(), updateProductQuantityRequest);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            baseResponse.setError(e.toString());
+        }
+        return baseResponse;
     }
 
 }

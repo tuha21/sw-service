@@ -63,4 +63,11 @@ public class ChannelProductController {
         return new ResponseEntity<>(tikTokProductService.create(id), HttpStatus.OK);
     }
 
+    @GetMapping("/sync")
+    public ResponseEntity<BaseResponse> sync (
+            @RequestParam("id") int id
+    ) {
+        return new ResponseEntity<>(tikTokProductService.sync(id), HttpStatus.OK);
+    }
+
 }
