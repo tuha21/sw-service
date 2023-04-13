@@ -12,6 +12,8 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
+import java.util.Date;
+
 @SpringBootApplication
 @EnableFeignClients
 @EnableAsync
@@ -31,5 +33,6 @@ public class DemoApplication implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
+        log.info("PROJECT START AT: {}", new Date());
     }
 }
