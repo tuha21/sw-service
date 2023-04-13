@@ -47,7 +47,7 @@ public interface TiktokProductFeign {
         @RequestParam("product_id") String productId
     );
 
-    @PutMapping(value = "",
+    @PutMapping(value = "/api/products/prices",
             produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
             consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
     ResponseEntity<UpdateProductPriceResponse> updatePrice(
@@ -57,7 +57,7 @@ public interface TiktokProductFeign {
         @RequestBody UpdateProductPriceRequest body
     );
 
-    @PutMapping(value ="",
+    @PutMapping(value ="/api/products/stocks",
             produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
             consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
     ResponseEntity<UpdateProductQuantityResponse> updateQuantity(

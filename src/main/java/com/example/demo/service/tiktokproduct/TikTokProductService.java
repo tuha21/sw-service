@@ -378,6 +378,7 @@ public class TikTokProductService {
                                     stockRequest.setAvailableStock(variantOpt.get().getAvailable());
                                     stockRequest.setWareHouseId(connectionOpt.get().getWarehouseId());
                                     updateProductQuantitySkusRequest.setStockInfos(Collections.singletonList(stockRequest));
+                                    qtyRequests.add(updateProductQuantitySkusRequest);
                                 }
                             }
                         }
@@ -385,8 +386,36 @@ public class TikTokProductService {
                         updateProductQuantityRequest.setProductId(channelProduct.getItemId());
                         updateProductPriceRequest.setSkus(priceRequests);
                         updateProductQuantityRequest.setSkus(qtyRequests);
-                        tikTokApiService.updatePrice(connectionOpt.get().getAccessToken(), connectionOpt.get().getShopId(), updateProductPriceRequest);
-                        tikTokApiService.updateQty(connectionOpt.get().getAccessToken(), connectionOpt.get().getShopId(), updateProductQuantityRequest);
+                        var priceResponse = tikTokApiService.updatePrice(connectionOpt.get().getAccessToken(), connectionOpt.get().getShopId(), updateProductPriceRequest);
+                        var qtyResponse = tikTokApiService.updateQty(connectionOpt.get().getAccessToken(), connectionOpt.get().getShopId(), updateProductQuantityRequest);
+                        String error = null;
+                        if (priceResponse != null) {
+                            if (priceResponse.getData() != null
+                                && priceResponse.getData().getFailedSKuIds().isEmpty()
+                            ) {
+                                System.out.println("update price success");
+                            } else {
+                                if (priceResponse.getMessage() != null) {
+                                    error = priceResponse.getMessage();
+                                }
+                            }
+                        }
+                        if (qtyResponse != null) {
+                            if (qtyResponse.getData() != null
+                                    && qtyResponse.getData().getFailedSkus().isEmpty()
+                            ) {
+                                System.out.println("update quantiry success");
+                            } else {
+                                if (qtyResponse.getMessage() != null) {
+                                    if (error == null) {
+                                        error = qtyResponse.getMessage();
+                                    } else {
+                                        error += qtyResponse.getMessage();
+                                    }
+                                }
+                            }
+                        }
+                        baseResponse.setError(error);
                     }
                 }
             }
