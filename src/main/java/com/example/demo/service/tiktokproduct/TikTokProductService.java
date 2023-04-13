@@ -106,12 +106,12 @@ public class TikTokProductService {
             channelProduct.setTenantId(connection.getTenantId());
             channelProduct.setItemId(itemId);
             channelProduct.setName(product.getProductName());
-            channelProductRepository.save(channelProduct);
             try {
                 channelProduct.setImage(product.getImages().get(0).getUrlList().get(0));
             } catch (Exception e) {
                 log.error("crawlProductDetail | {}", e.toString());
             }
+            channelProductRepository.save(channelProduct);
             if (!product.getSkus().isEmpty()) {
                 ChannelProduct finalChannelProduct = channelProduct;
                 ChannelProduct finalChannelProduct1 = channelProduct;

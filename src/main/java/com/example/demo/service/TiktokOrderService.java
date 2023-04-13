@@ -125,6 +125,7 @@ public class TiktokOrderService {
                     channelOrder.setTotalAmount(orderModel.getPaymentInfo().getTotalAmount());
                     channelOrder.setShippingCarrier(orderModel.getShippingProvider());
                     channelOrder.setPaymentMethod(orderModel.getPaymentMethod());
+                    channelOrder.setPaidTime(orderModel.getPaidTime());
                     channelOrder.setDateKey(Utils.getDateKey(channelOrder.getIssuedAt()));
                     channelOrderRepository.save(channelOrder);
                     crawlChannelOrderItem(orderModel, channelOrder.getId());
