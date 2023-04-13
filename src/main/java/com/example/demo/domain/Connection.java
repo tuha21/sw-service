@@ -17,5 +17,6 @@ public class Connection extends BaseEntity {
     private String refreshToken;
     private int accessTokenExpiredAt;
     private int refreshTokenExpiredAt;
+    private String warehouseId;
 
 }

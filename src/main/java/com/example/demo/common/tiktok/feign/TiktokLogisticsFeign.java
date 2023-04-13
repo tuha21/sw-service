@@ -2,6 +2,7 @@ package com.example.demo.common.tiktok.feign;
 
 import com.example.demo.common.tiktok.response.logistics.shippingdocument.TiktokShippingDocumentResponse;
 import com.example.demo.common.tiktok.response.logistics.shippinginfo.TiktokShippingInfoResponse;
+import com.example.demo.common.tiktok.response.logistics.warehouse.TiktokWarehousesResponse;
 import com.example.demo.configuration.TiktokFeignConfig;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.MediaType;
@@ -37,6 +38,15 @@ public interface TiktokLogisticsFeign {
         @RequestParam("access_token") String accessToken,
         @RequestParam("shop_id") String shopId,
         @RequestParam("order_id") String orderId
+    );
+
+    @GetMapping(value = "/api/logistics/get_warehouse_list",
+            produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
+            consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    ResponseEntity<TiktokWarehousesResponse> getWarehouseList (
+            @RequestParam("app_key") String partnerId,
+            @RequestParam("access_token") String accessToken,
+            @RequestParam("shop_id") String shopId
     );
 
 }

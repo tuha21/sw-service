@@ -67,6 +67,18 @@ public class CallbackService {
                             connection.setRefreshToken(accessTokenResponse.getRefreshToken());
                             connection.setAccessTokenExpiredAt(accessTokenResponse.getAccessTokenExpireIn());
                             connection.setRefreshTokenExpiredAt(accessTokenResponse.getRefreshTokenExpireIn());
+                            var warehouseResponse = tikTokApiService.getWarehouseList(connection.getAccessToken(), connection.getShopId());
+                            if (warehouseResponse != null
+                                && warehouseResponse.getData() != null
+                                    && !warehouseResponse.getData().getWarehouseList().isEmpty()
+                            ) {
+                                var warehouse = warehouseResponse.getData().getWarehouseList()
+                                        .stream().filter(item -> item.getWarehouseType() == 1)
+                                        .findFirst().orElse(null);
+                                if (warehouse != null) {
+                                    connection.setWarehouseId(warehouse.getWarehouseId());
+                                }
+                            }
                             connectionRepository.save(connection);
                             response.sendRedirect("https://tuha21.github.io/sw-frontend/");
                         }
