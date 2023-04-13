@@ -391,7 +391,7 @@ public class TikTokProductService {
                         String error = null;
                         if (priceResponse != null) {
                             if (priceResponse.getData() != null
-                                && priceResponse.getData().getFailedSKuIds().isEmpty()
+                                && (priceResponse.getData().getFailedSKuIds() == null || priceResponse.getData().getFailedSKuIds().isEmpty())
                             ) {
                                 System.out.println("update price success");
                             } else {
@@ -402,7 +402,7 @@ public class TikTokProductService {
                         }
                         if (qtyResponse != null) {
                             if (qtyResponse.getData() != null
-                                    && qtyResponse.getData().getFailedSkus().isEmpty()
+                                    && (qtyResponse.getData().getFailedSkus() == null || qtyResponse.getData().getFailedSkus().isEmpty())
                             ) {
                                 System.out.println("update quantiry success");
                             } else {
