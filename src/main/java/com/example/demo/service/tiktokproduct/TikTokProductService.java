@@ -206,6 +206,57 @@ public class TikTokProductService {
         channelProductResponses.add(channelProductResponse);
     }
 
+    public BaseResponse multiMap (List<Integer> connectionIds) {
+        var response = new BaseResponse();
+        var connections = connectionRepository.findAllByIdIn(connectionIds);
+        try {
+            if (connections != null) {
+                CompletableFuture.allOf(
+                        connections.stream()
+                        .map(this::multiMapByConnectionFuture)
+                                .toArray(CompletableFuture[]::new)
+                ).get();
+            }
+        } catch (Exception e) {
+            response.setError(e.toString());
+            log.error(e.toString());
+        }
+        return response;
+    }
+
+    private CompletableFuture<Void> multiMapByConnectionFuture (Connection connection) {
+        return CompletableFuture.runAsync(() -> multiMapByConnection(connection));
+    }
+
+    private void multiMapByConnection (Connection connection) {
+           try {
+               var channelVariants = channelVariantRepository.findAllByConnectionId(connection.getId());
+               if (channelVariants != null) {
+                   CompletableFuture.allOf(
+                           channelVariants
+                                   .stream()
+                                   .map(this::multiMapByChannelVariantFuture)
+                                   .toArray(CompletableFuture[]::new)
+                   ).get();
+               }
+           } catch (Exception e) {
+               log.error("multiMapByConnection: {}", e.toString());
+           }
+    }
+
+    private CompletableFuture<Void> multiMapByChannelVariantFuture (ChannelVariant channelVariant) {
+        return CompletableFuture.runAsync(() -> multiMapByChannelVariant(channelVariant));
+    }
+
+    private void multiMapByChannelVariant (ChannelVariant channelVariant) {
+        var variant = variantRepository.findBySku(channelVariant.getSku());
+        if (variant != null) {
+            channelVariant.setMappingId(variant.getId());
+            channelVariantRepository.save(channelVariant);
+            processProductMapping(channelVariant.getItemId());
+        }
+    }
+
     public BaseResponse quickMapProduct (int tiktokVariantId) {
         var response = new BaseResponse();
         var tiktokVariantOptional = channelVariantRepository.findById(tiktokVariantId);

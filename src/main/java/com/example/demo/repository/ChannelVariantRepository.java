@@ -10,4 +10,6 @@ public interface ChannelVariantRepository extends JpaRepository<ChannelVariant, 
 
     List<ChannelVariant> findAllByItemId(String itemId);
 
+    List<ChannelVariant> findAllByConnectionId(int connectionId);
+
 }
