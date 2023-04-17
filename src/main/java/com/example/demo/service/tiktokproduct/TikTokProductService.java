@@ -4,7 +4,6 @@ import com.example.demo.common.tiktok.model.product.TikTokProductModel;
 import com.example.demo.common.tiktok.model.product.TiktokSalesAttributes;
 import com.example.demo.common.tiktok.request.product.*;
 import com.example.demo.common.tiktok.response.product.TiktokProductsResponse;
-import com.example.demo.common.tiktok.response.product.UpdateProductQuantityResponse;
 import com.example.demo.controller.response.BaseResponse;
 import com.example.demo.controller.response.ChannelProductResponse;
 import com.example.demo.controller.response.ChannelProductsResponse;
@@ -16,7 +15,6 @@ import com.example.demo.domain.base.ChannelVariant;
 import com.example.demo.repository.*;
 import com.example.demo.service.tiktok.TikTokApiService;
 
-import java.lang.reflect.Array;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -249,11 +247,15 @@ public class TikTokProductService {
     }
 
     private void multiMapByChannelVariant (ChannelVariant channelVariant) {
-        var variant = variantRepository.findBySku(channelVariant.getSku());
-        if (variant != null) {
-            channelVariant.setMappingId(variant.getId());
-            channelVariantRepository.save(channelVariant);
-            processProductMapping(channelVariant.getItemId());
+        try {
+            var variant = variantRepository.findAllBySku(channelVariant.getSku());
+            if (variant != null && variant.size() > 0) {
+                channelVariant.setMappingId(variant.get(0).getId());
+                channelVariantRepository.save(channelVariant);
+                processProductMapping(channelVariant.getItemId());
+            }
+        } catch (Exception e) {
+            log.error("multiMapByChannelVariant: {}", e.toString());
         }
     }
 
@@ -264,10 +266,10 @@ public class TikTokProductService {
             if (tiktokVariantOptional.get().getSku() == null) {
                 response.setError("Sản phẩm phải có sku mới có thể liên kết nhanh");
             } else {
-                var variant = variantRepository.findBySku(tiktokVariantOptional.get().getSku());
-                if (variant != null) {
+                var variant = variantRepository.findAllBySku(tiktokVariantOptional.get().getSku());
+                if (variant != null && variant.size() > 0) {
                     ChannelVariant tiktokVariant = tiktokVariantOptional.get();
-                    tiktokVariant.setMappingId(variant.getId());
+                    tiktokVariant.setMappingId(variant.get(0).getId());
                     channelVariantRepository.save(tiktokVariant);
                     processProductMapping(tiktokVariant.getItemId());
                 } else {
@@ -329,7 +331,7 @@ public class TikTokProductService {
         try {
             var channelVariantToCreate = channelVariantRepository.findById(id);
             if (channelVariantToCreate.isPresent()) {
-                var variantOld = variantRepository.findBySku(channelVariantToCreate.get().getSku());
+                var variantOld = variantRepository.findAllBySku(channelVariantToCreate.get().getSku());
                 if (variantOld != null) {
                     response.setError("SKU đã tồn tại");
                 }

@@ -8,7 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface VariantRepository extends JpaRepository<Variant, Integer> {
 
-    Variant findBySku(String sku);
+    List<Variant> findAllBySku(String sku);
 
     List<Variant> findAllBySkuIn(List<String> sku);
 
