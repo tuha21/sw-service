@@ -87,5 +87,5 @@ public class TiktokOrderModel implements Serializable {
     private long updateTime;
 
     @JsonProperty("paid_time")
-    private int paidTime;
+    private long paidTime;
 }

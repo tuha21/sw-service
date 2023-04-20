@@ -155,7 +155,7 @@ public class TiktokOrderService {
                 channelOrderItem.setPrice(lineItem.getSkuOriginalPrice());
                 channelOrderItem.setItemId(lineItem.getProductId());
                 channelOrderItem.setVariantId(lineItem.getSkuId());
-                channelOrderItem.setName(lineItem.getProductName() + lineItem.getSkuName());
+                channelOrderItem.setName(lineItem.getProductName() + " - " +  lineItem.getSkuName());
                 try {
                     ChannelVariant channelVariant = channelVariantRepository.findByItemIdAndAndVariantId(
                             channelOrderItem.getItemId(),

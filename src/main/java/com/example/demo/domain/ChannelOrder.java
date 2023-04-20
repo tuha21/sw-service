@@ -26,6 +26,6 @@ public class ChannelOrder extends BaseEntity {
     private Boolean hasPrint;
     private String paymentMethod;
     private int dateKey;
-    private Integer paidTime;
+    private long paidTime;
 
 }
