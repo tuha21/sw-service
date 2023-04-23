@@ -26,6 +26,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -85,6 +86,36 @@ public class TikTokProductService {
             e.printStackTrace();
             log.error("[Tiktok Product] [crawlProductFuture] Error crawl product: {}", e.getMessage());
         }
+    }
+
+    public BaseResponse getMappingInfo (int id) {
+        var baseResponse = new BaseResponse();
+        var channelVariantOpt = channelVariantRepository.findById(id);
+        if (channelVariantOpt.isPresent()) {
+            var channelVariant = channelVariantOpt.get();
+            var connectionOpt = connectionRepository.findById(channelVariant.getId());
+            if (connectionOpt.isPresent()) {
+                var connection = connectionOpt.get();
+                var productDetail = tikTokApiService.getProductDetailTikTok(
+                        connection.getAccessToken(),
+                        connection.getShopId(),
+                        channelVariant.getItemId()
+                );
+                if (productDetail != null && productDetail.getData() != null) {
+                    var tiktokVariant = productDetail.getData().getSkus().stream()
+                            .filter(item -> item.getId().equalsIgnoreCase(channelVariant.getVariantId()))
+                            .findFirst()
+                            .orElse(null);
+                    assert tiktokVariant != null;
+                    channelVariant.setQuantity(tiktokVariant.getStockInfos().get(0).getAvailableStock());
+                    channelVariant.setPrice(new BigDecimal(tiktokVariant.getPrice().getOriginalPrice()));
+                }
+            }
+            var coreVar = variantRepository.findById(channelVariant.getMappingId());
+            coreVar.ifPresent(channelVariant::setVariant);
+            baseResponse.setData(channelVariant);
+        }
+        return baseResponse;
     }
 
     public void crawlProductDetail(Connection connection, String itemId) {
@@ -156,7 +187,7 @@ public class TikTokProductService {
         try {
             List<ChannelProductResponse> channelProductResponses = new ArrayList<>();
             List<ChannelProduct> products;
-            Pageable pageable = PageRequest.of(page, 10);
+            Pageable pageable = PageRequest.of(page, 10, Sort.by("id").descending());
             int total = 0;
             if (mappingStatus == 1) {
                 products = channelProductRepository.findAllByConnectionIdInAndNameContains(connectionIds, query, pageable);
@@ -399,6 +430,37 @@ public class TikTokProductService {
             e.printStackTrace();
         }
         return response;
+    }
+
+    public BaseResponse multiSync (List<Integer> connectionIds) {
+        var connections = connectionRepository.findAllByIdIn(connectionIds);
+        if (connections != null) {
+            CompletableFuture.allOf(
+                    connections
+                            .stream()
+                            .map(this::syncByConnectionFuture)
+                            .toArray(CompletableFuture[]::new)
+            );
+        }
+        return new BaseResponse();
+    }
+
+    public CompletableFuture<Void> syncByConnectionFuture (Connection connection) {
+        return CompletableFuture.runAsync(() -> syncByConnection(connection));
+    }
+
+    public void syncByConnection (Connection connection) {
+        var channelProducts = channelProductRepository.findAllByConnectionId(connection.getId());
+        CompletableFuture.allOf(
+                channelProducts
+                        .stream()
+                        .map(item -> syncFuture(item.getId()))
+                        .toArray(CompletableFuture[]::new)
+        );
+    }
+
+    public CompletableFuture<Void> syncFuture (int id) {
+        return CompletableFuture.runAsync(() -> sync(id));
     }
 
     public BaseResponse sync (int id) {

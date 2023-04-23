@@ -77,4 +77,18 @@ public class ChannelProductController {
         return new ResponseEntity<>(tikTokProductService.multiMap(connectionIds), HttpStatus.OK);
     }
 
+    @GetMapping("/mapping-info")
+    public ResponseEntity<BaseResponse> getMappingInfo (
+            @RequestParam("id") int id
+    ) {
+        return new ResponseEntity<>(tikTokProductService.getMappingInfo(id), HttpStatus.OK);
+    }
+
+    @GetMapping("/multi-sync")
+    public ResponseEntity<BaseResponse> multiSync (
+            @RequestParam("connectionIds") List<Integer> connectionIds
+    ) {
+        return new ResponseEntity<>(tikTokProductService.multiSync(connectionIds), HttpStatus.OK);
+    }
+
 }

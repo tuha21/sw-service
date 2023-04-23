@@ -17,4 +17,7 @@ public interface ChannelProductRepository extends JpaRepository<ChannelProduct, 
     int countAllByConnectionIdInAndNameContains(List<Integer> connectionIds, String name);
 
     int countAllByConnectionIdInAndNameContainsAndMappingStatus(List<Integer> connectionIds, String query, boolean mappingStatus);
+
+    List<ChannelProduct> findAllByConnectionId(int connectionId);
+
 }
