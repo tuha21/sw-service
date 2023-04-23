@@ -1,6 +1,5 @@
 package com.example.demo;
 
-import com.example.demo.domain.ChannelProduct;
 import com.example.demo.repository.ChannelProductRepository;
 import com.example.demo.repository.ChannelVariantRepository;
 import lombok.extern.slf4j.Slf4j;
