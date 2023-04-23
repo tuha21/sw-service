@@ -364,7 +364,7 @@ public class TiktokOrderService {
     }
 
     private String getTimeText (long time) {
-        Date date = new Date(time);
+        Date date = new Date(time * 1000);
         Calendar calendar = new GregorianCalendar();
         calendar.setTime(date);
         int year = calendar.get(Calendar.YEAR);
