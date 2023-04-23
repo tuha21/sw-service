@@ -93,7 +93,7 @@ public class TikTokProductService {
         var channelVariantOpt = channelVariantRepository.findById(id);
         if (channelVariantOpt.isPresent()) {
             var channelVariant = channelVariantOpt.get();
-            var connectionOpt = connectionRepository.findById(channelVariant.getId());
+            var connectionOpt = connectionRepository.findById(channelVariant.getConnectionId());
             if (connectionOpt.isPresent()) {
                 var connection = connectionOpt.get();
                 var productDetail = tikTokApiService.getProductDetailTikTok(
