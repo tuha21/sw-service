@@ -107,6 +107,7 @@ public class TikTokProductService {
                             .findFirst()
                             .orElse(null);
                     assert tiktokVariant != null;
+                    System.out.println("set mapping info");
                     channelVariant.setQuantity(tiktokVariant.getStockInfos().get(0).getAvailableStock());
                     channelVariant.setPrice(new BigDecimal(tiktokVariant.getPrice().getOriginalPrice()));
                 }
