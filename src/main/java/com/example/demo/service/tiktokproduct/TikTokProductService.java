@@ -101,6 +101,7 @@ public class TikTokProductService {
                         connection.getShopId(),
                         channelVariant.getItemId()
                 );
+                System.out.println(productDetail);
                 if (productDetail != null && productDetail.getData() != null) {
                     var tiktokVariant = productDetail.getData().getSkus().stream()
                             .filter(item -> item.getId().equalsIgnoreCase(channelVariant.getVariantId()))
